@@ -1,0 +1,745 @@
+@import "tailwindcss";
+
+
+/* ─── Zara-Minimal Design System ───────────────────────────── */
+
+:root {
+  /* Colors — pure black & white palette */
+  --color-primary: #000000;
+  --color-white: #ffffff;
+  --color-surface: #f5f5f5;
+  --color-text: #000000;
+  --color-text-secondary: #666666;
+  --color-text-muted: #999999;
+  --color-border: #e5e5e5;
+  --color-border-dark: #cccccc;
+  --color-success: #2d8a4e;
+  --color-error: #c41e3a;
+  --color-accent: #000000;
+
+  /* Typography — single font family */
+  --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-heading: var(--font-primary);
+  --font-body: var(--font-primary);
+  --font-mono: 'SF Mono', 'Fira Code', monospace;
+
+  /* Spacing */
+  --section-padding: clamp(3rem, 8vw, 7rem);
+  --page-gutter: clamp(1rem, 4vw, 2.5rem);
+
+  /* Transitions */
+  --transition-fast: 0.15s ease;
+  --transition-base: 0.25s ease;
+  --transition-slow: 0.4s ease;
+
+  /* Shadows — minimal */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.06);
+
+  /* Border Radius — sharp by default */
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-full: 9999px;
+}
+
+/* ─── Base ───────────────────────────────────────────────────── */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-primary);
+  color: var(--color-text);
+  background-color: var(--color-white);
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-primary);
+  font-weight: 400;
+  line-height: 1.15;
+  letter-spacing: 0.02em;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+/* ─── Custom Scrollbar ───────────────────────────────────────── */
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-white);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #999;
+}
+
+/* ─── Selection ──────────────────────────────────────────────── */
+
+::selection {
+  background: var(--color-primary);
+  color: var(--color-white);
+}
+
+/* ─── Buttons — Zara Style ──────────────────────────────────── */
+
+.btn-premium {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.875rem 2rem;
+  font-family: var(--font-primary);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  border: none;
+  cursor: pointer;
+  transition: opacity var(--transition-fast);
+  position: relative;
+}
+
+.btn-premium::before {
+  display: none;
+}
+
+.btn-premium span {
+  position: relative;
+  z-index: 1;
+}
+
+.btn-premium:hover {
+  opacity: 0.7;
+}
+
+.btn-primary {
+  background: var(--color-primary);
+  color: var(--color-white);
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary);
+}
+
+.btn-outline:hover {
+  background: var(--color-primary);
+  color: var(--color-white);
+  opacity: 1;
+}
+
+/* ─── Product Card ───────────────────────────────────────────── */
+
+.product-card {
+  position: relative;
+  overflow: hidden;
+  transition: none;
+  background: var(--color-white);
+}
+
+.product-card:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.product-card .product-image {
+  transition: opacity var(--transition-base);
+}
+
+.product-card:hover .product-image {
+  transform: none;
+  opacity: 0.92;
+}
+
+.product-card .product-overlay {
+  display: none;
+}
+
+/* ─── Image Zoom — disabled ─────────────────────────────────── */
+
+.image-zoom {
+  overflow: hidden;
+}
+
+.image-zoom img {
+  transition: opacity var(--transition-base);
+}
+
+.image-zoom:hover img {
+  transform: none;
+  opacity: 0.92;
+}
+
+/* ─── Category Card — Zara editorial ─────────────────────────── */
+
+.category-card {
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.category-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.02);
+  transition: background var(--transition-base);
+}
+
+.category-card:hover::after {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.category-card img {
+  transition: none;
+}
+
+.category-card:hover img {
+  transform: none;
+}
+
+.category-card .category-text {
+  position: relative;
+  z-index: 1;
+}
+
+/* ─── Input ──────────────────────────────────────────────────── */
+
+.input-premium {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-family: var(--font-primary);
+  font-size: 0.8rem;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  outline: none;
+  transition: border-color var(--transition-fast);
+}
+
+.input-premium:focus {
+  border-color: var(--color-primary);
+}
+
+/* ─── Animations (functional only) ───────────────────────────── */
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes skeleton-pulse {
+
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes shimmer {
+
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+/* ─── Section Label — Zara style ─────────────────────────────── */
+
+.section-label {
+  font-family: var(--font-primary);
+  font-size: 0.65rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+/* ─── Divider — simple ───────────────────────────────────────── */
+
+.divider-gold {
+  width: 40px;
+  height: 1px;
+  background: var(--color-primary);
+  margin: 0 auto;
+}
+
+/* ─── Shop Page ──────────────────────────────────────────────── */
+
+.shop-hero {
+  background: var(--color-white);
+  color: var(--color-text);
+  position: relative;
+}
+
+.shop-hero::before {
+  display: none;
+}
+
+.shop-sidebar {
+  background: var(--color-white);
+  border: none;
+  border-right: 1px solid var(--color-border);
+  border-radius: 0;
+  padding: 0 2rem 0 0;
+  box-shadow: none;
+}
+
+.shop-sidebar:hover {
+  box-shadow: none;
+}
+
+.shop-category-btn {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.5rem 0;
+  font-family: var(--font-primary);
+  font-size: 0.75rem;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: none;
+  border-left: none;
+  border-radius: 0;
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+
+.shop-category-btn:hover {
+  color: var(--color-text);
+  background: none;
+  border-left-color: transparent;
+  padding-left: 0;
+}
+
+.shop-category-btn.active {
+  color: var(--color-text);
+  font-weight: 600;
+  background: none;
+  border-left-color: transparent;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.shop-pagination-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--color-border);
+  border-radius: 0;
+  background: var(--color-white);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.shop-pagination-btn:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  box-shadow: none;
+  transform: none;
+}
+
+.shop-pagination-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* Product card actions — minimal */
+.product-card-actions {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  opacity: 0;
+  transition: opacity var(--transition-base);
+  pointer-events: none;
+}
+
+.product-card:hover .product-card-actions {
+  opacity: 1;
+  transform: none;
+  pointer-events: all;
+}
+
+.product-action-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+  color: var(--color-text);
+  transition: all var(--transition-fast);
+  box-shadow: none;
+}
+
+.product-action-btn:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: var(--color-primary);
+}
+
+.product-action-btn.wishlisted {
+  background: var(--color-white);
+  color: var(--color-error);
+  border-color: var(--color-error);
+}
+
+/* Mobile filter drawer */
+.filter-drawer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.filter-drawer-overlay.open {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.filter-drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 85%;
+  max-width: 360px;
+  z-index: 45;
+  background: var(--color-white);
+  padding: 2rem 1.5rem;
+  overflow-y: auto;
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
+  border-right: 1px solid var(--color-border);
+}
+
+.filter-drawer.open {
+  transform: translateX(0);
+}
+
+.filter-fab {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 35;
+  width: 48px;
+  height: 48px;
+  border-radius: 0;
+  background: var(--color-primary);
+  color: var(--color-white);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity var(--transition-fast);
+}
+
+.filter-fab:hover {
+  transform: none;
+  opacity: 0.7;
+}
+
+/* Skeleton loader */
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+/* ═══════════════════════════════════════════
+   REUSABLE PAGE COMPONENTS — Zara Minimal
+   ═══════════════════════════════════════════ */
+
+/* Page Hero — clean white */
+.page-hero {
+  position: relative;
+  background: var(--color-white);
+  color: var(--color-text);
+  padding: 4rem var(--page-gutter) 2rem;
+}
+
+.page-hero::before {
+  display: none;
+}
+
+.page-hero .hero-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.page-hero .hero-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.page-hero .hero-breadcrumb a {
+  color: var(--color-text-muted);
+  text-decoration: none;
+  font-size: 0.65rem;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  transition: color 0.15s ease;
+}
+
+.page-hero .hero-breadcrumb a:hover {
+  color: var(--color-text);
+}
+
+.page-hero .hero-breadcrumb .sep {
+  color: var(--color-text-muted);
+  font-size: 0.65rem;
+}
+
+.page-hero .hero-breadcrumb .current {
+  color: var(--color-text);
+  font-size: 0.65rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.page-hero h1 {
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  font-weight: 300;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.page-hero .hero-sub {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.page-hero .hero-sub p {
+  font-size: 0.7rem;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+/* Premium Card — minimal */
+.premium-card {
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: 0;
+  transition: border-color 0.2s ease;
+}
+
+.premium-card:hover {
+  border-color: var(--color-primary);
+  box-shadow: none;
+}
+
+/* Quantity Stepper */
+.qty-stepper {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--color-border);
+}
+
+.qty-stepper button {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text);
+  transition: opacity 0.15s ease;
+}
+
+.qty-stepper button:hover:not(:disabled) {
+  opacity: 0.6;
+}
+
+.qty-stepper button:disabled {
+  opacity: 0.2;
+  cursor: not-allowed;
+}
+
+.qty-stepper .qty-value {
+  width: 44px;
+  text-align: center;
+  font-family: var(--font-primary);
+  font-weight: 500;
+  font-size: 0.85rem;
+  border-left: 1px solid var(--color-border);
+  border-right: 1px solid var(--color-border);
+  line-height: 36px;
+}
+
+/* Order Status Badges — minimal */
+.status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.6rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.status-badge.pending {
+  background: #fef3cd;
+  color: #856404;
+}
+
+.status-badge.processing {
+  background: #cce5ff;
+  color: #004085;
+}
+
+.status-badge.shipped {
+  background: #e2d5f1;
+  color: #5a3e8e;
+}
+
+.status-badge.delivered {
+  background: #d4edda;
+  color: #155724;
+}
+
+.status-badge.cancelled {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+/* Address Card */
+.address-card {
+  padding: 1.25rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-white);
+  transition: border-color 0.2s ease;
+  position: relative;
+}
+
+.address-card:hover {
+  border-color: var(--color-primary);
+  box-shadow: none;
+}
+
+.address-card.default {
+  border-color: var(--color-primary);
+}
+
+.address-card .default-badge {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  font-size: 0.55rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text);
+  background: var(--color-surface);
+  padding: 0.2rem 0.5rem;
+}
+
+/* Contact method icon */
+.contact-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 0;
+  background: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--color-white);
+}
+
+/* Page section pattern */
+.page-section {
+  padding: 3rem var(--page-gutter);
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Gradient text — now just black */
+.gradient-text {
+  color: var(--color-text);
+  background: none;
+  -webkit-background-clip: unset;
+  -webkit-text-fill-color: unset;
+  background-clip: unset;
+  animation: none;
+}
+
+/* Glass classes — transparent fallback */
+.glass,
+.glass-light,
+.glass-dark,
+.glass-nav {
+  background: var(--color-white);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: 1px solid var(--color-border);
+}
+
+/* Scroll indicator */
+.scroll-indicator {
+  animation: none;
+}
