@@ -166,7 +166,7 @@ const HomePage = () => {
             </Link>
           </div>
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-4">
             {featuredProducts.map((product) => (
               <div
                 key={product.id}
@@ -178,6 +178,8 @@ const HomePage = () => {
                     src={product.image}
                     alt={product.name}
                     className="w-full h-full object-cover"
+                    loading="lazy"
+                    decoding="async"
                     style={{ transition: 'opacity 0.25s ease' }}
                     onMouseEnter={(e) => (e.target.style.opacity = '0.85')}
                     onMouseLeave={(e) => (e.target.style.opacity = '1')}
@@ -266,6 +268,8 @@ const HomePage = () => {
                   src={product.image}
                   alt={product.name}
                   className="w-full h-full object-cover"
+                  loading="lazy"
+                  decoding="async"
                   style={{ transition: 'opacity 0.25s ease' }}
                   onMouseEnter={(e) => (e.target.style.opacity = '0.85')}
                   onMouseLeave={(e) => (e.target.style.opacity = '1')}

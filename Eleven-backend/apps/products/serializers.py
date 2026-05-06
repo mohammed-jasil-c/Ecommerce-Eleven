@@ -12,7 +12,10 @@ class ProductImageSerializer(serializers.ModelSerializer):
 
     def get_image(self, obj):
         if obj.image:
-            return obj.image.url if hasattr(obj.image, "url") else str(obj.image)
+            url = obj.image.url if hasattr(obj.image, "url") else str(obj.image)
+            if "/upload/" in url and "f_auto,q_auto" not in url:
+                url = url.replace("/upload/", "/upload/f_auto,q_auto/")
+            return url
         return None
 
 class ProductImageUploadSerializer(serializers.ModelSerializer):
@@ -36,7 +39,12 @@ class CategorySerializer(serializers.ModelSerializer):
         fields = ["id", "name", "slug", "image"]
 
     def get_image(self, obj):
-        return obj.image.url if obj.image else None
+        if obj.image:
+            url = obj.image.url
+            if "/upload/" in url and "f_auto,q_auto" not in url:
+                url = url.replace("/upload/", "/upload/f_auto,q_auto/")
+            return url
+        return None
 
 
 

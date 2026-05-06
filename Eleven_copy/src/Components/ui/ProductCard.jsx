@@ -181,6 +181,8 @@ const ProductCard = ({ product }) => {
               src={productImage}
               alt={product.name}
               className="product-image w-full h-full object-cover"
+              loading="lazy"
+              decoding="async"
             />
 
             {/* Hover actions — minimal */}

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, Suspense, lazy } from "react";
 import { useLocation } from "react-router-dom";
 import { Routes, Route } from "react-router-dom";
 import { Toaster } from "sonner";
@@ -23,43 +23,43 @@ import Login from "./features/auth/components/Login";
 import Registration from "./features/auth/components/Registration";
 import { useBlockCheck } from "./features/auth/utils/handleLogin";
 import { useAuth } from "./features/auth/context/AuthContext";
-import ChangePasswordPage from "./features/auth/components/ChangePassword.jsx";
+const ChangePasswordPage = lazy(() => import("./features/auth/components/ChangePassword.jsx"));
 
 // Pages
-import HomePage from "./pages/Home/HomePage";
-import NewArrivals from "./pages/Home/NewArrivals";
-import NotFound from "./pages/NotFound/NotFound";
-import AboutPage from "./pages/About";
-import Contact from "./pages/Contact";
-import ProfilePage from "./pages/profilePage.jsx";
-import AddressesPage from "./pages/AddressesPage.jsx";
+const HomePage = lazy(() => import("./pages/Home/HomePage"));
+const NewArrivals = lazy(() => import("./pages/Home/NewArrivals"));
+const NotFound = lazy(() => import("./pages/NotFound/NotFound"));
+const AboutPage = lazy(() => import("./pages/About"));
+const Contact = lazy(() => import("./pages/Contact"));
+const ProfilePage = lazy(() => import("./pages/profilePage.jsx"));
+const AddressesPage = lazy(() => import("./pages/AddressesPage.jsx"));
 
 // Product Feature
-import ShopPage from "./features/products/components/Shop";
-import ProductDetails from "./features/products/components/ProductDetails";
-import CategoryProducts from "./features/products/components/CategoryProducts";
-import CheckoutPage from "./features/orders/components/CheckoutPage.jsx";
-import PaymentSuccess from "./features/checkout/payments/PaymentSuccess.jsx";
+const ShopPage = lazy(() => import("./features/products/components/Shop"));
+const ProductDetails = lazy(() => import("./features/products/components/ProductDetails"));
+const CategoryProducts = lazy(() => import("./features/products/components/CategoryProducts"));
+const CheckoutPage = lazy(() => import("./features/orders/components/CheckoutPage.jsx"));
+const PaymentSuccess = lazy(() => import("./features/checkout/payments/PaymentSuccess.jsx"));
 
 // Cart & Wishlist Features
-import CartPage from "./features/cart/components/Cart";
-import WishlistPage from "./features/wishlist/components/WishlistPage";
+const CartPage = lazy(() => import("./features/cart/components/Cart"));
+const WishlistPage = lazy(() => import("./features/wishlist/components/WishlistPage"));
 
 // Order Feature
-import OrdersPage from "./features/orders/components/OrdersPage.jsx";
-import TrackOrder from "./features/orders/components/TrackOrder";
-import OrderTrackingDetail from "./features/orders/components/OrderTrackingDetail";
-import OrderDetailPage from "./features/orders/components/OrderDetailPage.jsx";
+const OrdersPage = lazy(() => import("./features/orders/components/OrdersPage.jsx"));
+const TrackOrder = lazy(() => import("./features/orders/components/TrackOrder"));
+const OrderTrackingDetail = lazy(() => import("./features/orders/components/OrderTrackingDetail"));
+const OrderDetailPage = lazy(() => import("./features/orders/components/OrderDetailPage.jsx"));
 
 // Admin Feature
-import AdminLayout from "./features/admin/layout/AdminLayout";
-import AdminDashboard from "./features/admin/pages/AdminDashboard";
-import UserManagement from "./features/admin/pages/users/UserManagement";
-import ProductManagement from "./features/admin/pages/products/ProductsManagement";
-import AddProduct from "./features/admin/pages/products/AddProducts";
-import EditProduct from "./features/admin/pages/products/EditProducts";
-import OrderManagement from "./features/admin/pages/orders/OrderManagement";
-import OrderDetails from "./features/admin/pages/orders/OrderDetails";
+const AdminLayout = lazy(() => import("./features/admin/layout/AdminLayout"));
+const AdminDashboard = lazy(() => import("./features/admin/pages/AdminDashboard"));
+const UserManagement = lazy(() => import("./features/admin/pages/users/UserManagement"));
+const ProductManagement = lazy(() => import("./features/admin/pages/products/ProductsManagement"));
+const AddProduct = lazy(() => import("./features/admin/pages/products/AddProducts"));
+const EditProduct = lazy(() => import("./features/admin/pages/products/EditProducts"));
+const OrderManagement = lazy(() => import("./features/admin/pages/orders/OrderManagement"));
+const OrderDetails = lazy(() => import("./features/admin/pages/orders/OrderDetails"));
 
 // Layout component to handle conditional rendering
 const AppLayout = ({ children }) => {
@@ -93,7 +93,7 @@ function App() {
       )}
 
       <AppLayout>
-        <Routes>
+        <Suspense fallback={<Preloader />}><Routes>
           {/* User Routes */}
           <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<PublicRoute> <Login /></PublicRoute>} />
@@ -176,7 +176,7 @@ function App() {
 
           {/* 404 route should be last */}
           <Route path="*" element={<NotFound />} />
-        </Routes>
+        </Routes></Suspense>
 
       </AppLayout>
 
