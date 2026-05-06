@@ -7,7 +7,7 @@ class WishlistSerializer(serializers.ModelSerializer):
     product_id = serializers.CharField(source="variant.product.id", read_only=True)
     name = serializers.CharField(source="variant.product.name", read_only=True)
     price = serializers.DecimalField(
-        source="variant.price",
+        source="variant.product.price",
         max_digits=10,
         decimal_places=2,
         read_only=True

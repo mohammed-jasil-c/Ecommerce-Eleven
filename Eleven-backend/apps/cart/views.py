@@ -3,7 +3,6 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from django.shortcuts import get_object_or_404
-from django.db.models import F
 
 from .models import Cart, CartItem
 from .serializers import CartSerializer
@@ -14,15 +13,14 @@ class CartView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        cart, created = Cart.objects.get_or_create(user=request.user)
-
-        cart = Cart.objects.prefetch_related(
-            "items__variant__product"
-        ).get(user=request.user)
+        cart, created = Cart.objects.prefetch_related(
+            "items__variant__product__images"
+        ).get_or_create(user=request.user)
 
         serializer = CartSerializer(cart)
         return Response(serializer.data)
-    
+
+
 class AddToCartView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -47,7 +45,8 @@ class AddToCartView(APIView):
         cart_item.save()
 
         return Response({"message": "Added to cart"})
-    
+
+
 class UpdateCartItemView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -74,7 +73,8 @@ class UpdateCartItemView(APIView):
         item.save()
 
         return Response({"message": "Item updated"})
-    
+
+
 class RemoveCartItemView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -87,7 +87,7 @@ class RemoveCartItemView(APIView):
 
         item.delete()
         return Response({"message": "Item removed"})
-    
+
 
 class ClearCartView(APIView):
     permission_classes = [IsAuthenticated]
@@ -96,18 +96,22 @@ class ClearCartView(APIView):
         cart = get_object_or_404(Cart, user=request.user)
         cart.items.all().delete()
         return Response({"message": "Cart cleared"})
-    
+
+
 class CartSummaryView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         cart, created = Cart.objects.get_or_create(user=request.user)
 
-        total_quantity = sum(item.quantity for item in cart.items.all())
-        total_price = sum(item.variant.price * item.quantity for item in cart.items.all())
+        # Single query with proper joins
+        items = list(cart.items.select_related("variant__product").all())
+
+        total_quantity = sum(item.quantity for item in items)
+        total_price = sum(item.variant.product.price * item.quantity for item in items)
 
         return Response({
-            "total_items": cart.items.count(),
+            "total_items": len(items),
             "total_quantity": total_quantity,
             "total_price": total_price,
-        })                    
+        })

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import gsap from "gsap";
 import api from "../../../api/apiService";
 import { Lock, Eye, EyeOff, Shield, Save } from "lucide-react";

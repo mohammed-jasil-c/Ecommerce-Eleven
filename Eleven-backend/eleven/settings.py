@@ -1,7 +1,8 @@
-
-
 from pathlib import Path
+from datetime import timedelta
 import os
+
+import cloudinary
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -24,9 +25,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    
-    
-    
+
+    # Third-party
     'rest_framework',
     'corsheaders',
     "rest_framework_simplejwt.token_blacklist",
@@ -34,8 +34,7 @@ INSTALLED_APPS = [
     "cloudinary_storage",
     "django_filters",
 
-    
-    
+    # Local apps
     'apps.accounts',
     'apps.products',
     'apps.cart',
@@ -140,8 +139,15 @@ REST_FRAMEWORK = {
         'rest_framework.filters.SearchFilter',
         'rest_framework.filters.OrderingFilter',
         'django_filters.rest_framework.DjangoFilterBackend',
-
     ),
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/min',
+        'user': '300/min',
+    },
 }
 
 
@@ -151,15 +157,15 @@ CORS_ALLOWED_ORIGINS = os.getenv(
     'http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173'
 ).split(',')
 
+CORS_ALLOW_CREDENTIALS = True
 
 
-
-from datetime import timedelta
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
-
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
@@ -170,12 +176,7 @@ AUTH_USER_MODEL = 'accounts.User'
 STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
 
-CORS_ALLOW_ALL_ORIGINS = True   
-CORS_ALLOW_CREDENTIALS = True
 
-
-
-import cloudinary
 
 cloudinary.config(
     cloud_name=os.getenv("CLOUD_NAME"),
@@ -185,7 +186,7 @@ cloudinary.config(
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = os.getenv("EMAIL_HOST")
-EMAIL_PORT = os.getenv("EMAIL_PORT")
+EMAIL_PORT = int(os.getenv("EMAIL_PORT", 587))
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS") == "True"

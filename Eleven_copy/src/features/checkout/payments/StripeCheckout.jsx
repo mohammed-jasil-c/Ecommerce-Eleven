@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useStripe, useElements, PaymentElement } from "@stripe/react-stripe-js";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { Lock } from "lucide-react";
 
 import api from "../../../api/apiService";

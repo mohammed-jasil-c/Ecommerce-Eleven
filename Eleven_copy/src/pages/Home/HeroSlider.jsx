@@ -1,199 +1,452 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
+import gsap from "gsap";
 
-const slides = [
+const heroSets = [
   {
-    type: "image",
-    src: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=1925&auto=format&fit=crop",
-    title: "ULTRABOOST",
-    subtitle: "Energy that never stops.",
-    cta: "SHOP COLLECTION",
-    link: "/shop",
+    headline: "ULTRABOOST",
+    tagline: "Step into Hyperboost Edge. Now in new colors available on Eleven.",
+    images: [
+      "https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=1200&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?q=80&w=1200&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1608231387042-66d1773070a5?q=80&w=1200&auto=format&fit=crop",
+    ],
+    ctas: [
+      { label: "Shop Men", link: "/shop?category=men" },
+      { label: "Shop Women", link: "/shop?category=women" },
+    ],
   },
   {
-    type: "image",
-    src: "https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?q=80&w=1925&auto=format&fit=crop",
-    title: "NMD_R1 V2",
-    subtitle: "Step into the future.",
-    cta: "EXPLORE",
-    link: "/shop",
+    headline: "NMD COLLECTION",
+    tagline: "Future-forward design meets all-day comfort. Only at Eleven.",
+    images: [
+      "https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?q=80&w=1200&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?q=80&w=1200&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1560769629-975ec94e6a86?q=80&w=1200&auto=format&fit=crop",
+    ],
+    ctas: [
+      { label: "Shop Now", link: "/shop" },
+      { label: "New Arrivals", link: "/new-arrivals" },
+    ],
   },
   {
-    type: "image",
-    src: "https://images.unsplash.com/photo-1543508282-6319a3e2621f?q=80&w=1925&auto=format&fit=crop",
-    title: "YEEZY BOOST 350 V2",
-    subtitle: "Iconic style, redefined.",
-    cta: "SHOP NOW",
-    link: "/shop",
+    headline: "YEEZY 350 V2",
+    tagline: "Iconic style, redefined. Limited stock available.",
+    images: [
+      "https://images.unsplash.com/photo-1543508282-6319a3e2621f?q=80&w=1200&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1551107696-a4b0c5a0d9a2?q=80&w=1200&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1587563871167-1ee9c731aefb?q=80&w=1200&auto=format&fit=crop",
+    ],
+    ctas: [
+      { label: "Shop Collection", link: "/shop" },
+      { label: "View All", link: "/shop" },
+    ],
   },
 ];
 
 const HeroSlider = () => {
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [current, setCurrent] = useState(0);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const containerRef = useRef(null);
+  const contentRef = useRef(null);
+  const panelsRef = useRef([]);
   const intervalRef = useRef(null);
 
-  const startSlider = () => {
-    intervalRef.current = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % slides.length);
-    }, 6000);
-  };
+  const slide = heroSets[current];
 
-  const stopSlider = () => {
-    clearInterval(intervalRef.current);
-  };
-
+  // Preload all images
   useEffect(() => {
-    setIsLoaded(true);
+    heroSets.forEach((set) =>
+      set.images.forEach((src) => {
+        const img = new Image();
+        img.src = src;
+      })
+    );
+  }, []);
 
-    // preload images
-    slides.forEach((slide) => {
-      const img = new Image();
-      img.src = slide.src;
+  // Auto-advance
+  useEffect(() => {
+    intervalRef.current = setInterval(() => {
+      goTo((prev) => (prev + 1) % heroSets.length);
+    }, 7000);
+    return () => clearInterval(intervalRef.current);
+  }, [current]);
+
+  // Entrance animation
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const tl = gsap.timeline();
+
+    // Panels clip in from right
+    tl.fromTo(
+      panelsRef.current,
+      { clipPath: "inset(0 100% 0 0)" },
+      {
+        clipPath: "inset(0 0% 0 0)",
+        duration: 0.9,
+        stagger: 0.12,
+        ease: "power3.inOut",
+      }
+    );
+
+    // Text slides up
+    tl.fromTo(
+      contentRef.current?.children || [],
+      { y: 40, opacity: 0 },
+      {
+        y: 0,
+        opacity: 1,
+        duration: 0.6,
+        stagger: 0.08,
+        ease: "power3.out",
+      },
+      "-=0.4"
+    );
+
+    return () => tl.kill();
+  }, [current]);
+
+  const goTo = (indexOrFn) => {
+    if (isAnimating) return;
+    setIsAnimating(true);
+
+    const nextIndex =
+      typeof indexOrFn === "function" ? indexOrFn(current) : indexOrFn;
+
+    // Exit animation
+    const tl = gsap.timeline({
+      onComplete: () => {
+        setCurrent(nextIndex);
+        setIsAnimating(false);
+      },
     });
 
-    startSlider();
+    tl.to(contentRef.current?.children || [], {
+      y: -30,
+      opacity: 0,
+      duration: 0.3,
+      stagger: 0.04,
+      ease: "power2.in",
+    });
 
-    return () => stopSlider();
-  }, []);
+    tl.to(
+      panelsRef.current,
+      {
+        clipPath: "inset(0 0 0 100%)",
+        duration: 0.6,
+        stagger: 0.08,
+        ease: "power3.inOut",
+      },
+      "-=0.1"
+    );
+  };
+
+  const handlePrev = () => {
+    clearInterval(intervalRef.current);
+    goTo((current - 1 + heroSets.length) % heroSets.length);
+  };
+
+  const handleNext = () => {
+    clearInterval(intervalRef.current);
+    goTo((current + 1) % heroSets.length);
+  };
 
   return (
     <section
-      className="relative w-full h-[100dvh] overflow-hidden bg-black text-white"
-      onMouseEnter={stopSlider}
-      onMouseLeave={startSlider}
+      ref={containerRef}
+      className="relative w-full overflow-hidden"
+      style={{ background: "#000" }}
     >
-      {/* Background Slides */}
-      {slides.map((slide, index) => (
-        <div
-          key={index}
-          className={`absolute inset-0 transition-all duration-[1500ms] ease-[cubic-bezier(0.25,1,0.5,1)]
-          ${
-            index === currentSlide
-              ? "opacity-100 scale-100 z-0"
-              : "opacity-0 scale-105 pointer-events-none z-0"
-          }`}
-        >
-          <img
-            src={slide.src}
-            alt={slide.title}
-            className="w-full h-full object-cover object-center"
-          />
-
-          {/* Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/10 to-black/80" />
-        </div>
-      ))}
-
-      {/* ELEVEN Title */}
+      {/* ═══ 3-Panel Image Grid ═══ */}
       <div
-        className={`absolute inset-0 flex items-center justify-center pointer-events-none z-10 transition-all duration-[1.5s] ${
-          isLoaded ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-10"
-        }`}
+        className="grid w-full"
+        style={{
+          gridTemplateColumns: "1fr 1fr 1fr",
+          height: "calc(100dvh - 64px)",
+          minHeight: "500px",
+        }}
       >
-        <h1
-          className="text-[clamp(4rem,20vw,18rem)] font-light uppercase mix-blend-overlay"
-          style={{
-            fontFamily:
-              "'Playfair Display', 'Didot', 'Bodoni MT', 'Times New Roman', serif",
-            letterSpacing: "0.15em",
-            textShadow: "0 10px 50px rgba(0,0,0,0.8)",
-          }}
-        >
-          ELEVEN
-        </h1>
+        {slide.images.map((src, i) => (
+          <div
+            key={`${current}-${i}`}
+            ref={(el) => (panelsRef.current[i] = el)}
+            className="relative overflow-hidden"
+            style={{ clipPath: "inset(0 100% 0 0)" }}
+          >
+            <img
+              src={src}
+              alt={`${slide.headline} panel ${i + 1}`}
+              className="w-full h-full object-cover"
+              style={{
+                transition: "transform 8s ease-out",
+                transform: "scale(1.05)",
+              }}
+              onLoad={(e) => {
+                setTimeout(() => {
+                  e.target.style.transform = "scale(1)";
+                }, 100);
+              }}
+            />
+
+            {/* Dark gradient overlay on each panel */}
+            <div
+              className="absolute inset-0"
+              style={{
+                background:
+                  i === 0
+                    ? "linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.15) 50%, transparent 100%)"
+                    : "linear-gradient(to top, rgba(0,0,0,0.3) 0%, transparent 60%)",
+              }}
+            />
+          </div>
+        ))}
       </div>
 
-      {/* Content */}
-      <div className="absolute bottom-0 inset-x-0 z-20 flex flex-col lg:flex-row justify-between lg:items-end w-full max-w-[1920px] mx-auto pb-16 px-6 md:pb-24 md:px-12 xl:px-24">
-        {/* Text */}
-        <div className="max-w-2xl mb-8 lg:mb-0">
+      {/* ═══ Bottom Content Overlay (Adidas-style) ═══ */}
+      <div
+        className="absolute bottom-0 left-0 right-0 z-20"
+        style={{ padding: "0 clamp(1.5rem, 4vw, 3rem) clamp(2rem, 5vw, 3.5rem)" }}
+      >
+        <div ref={contentRef} style={{ maxWidth: "700px" }}>
+          {/* Headline with highlight background */}
           <h2
-            key={`title-${currentSlide}`}
-            className="text-white font-black text-4xl sm:text-5xl md:text-6xl lg:text-7xl uppercase tracking-tight slide-up-anim"
+            style={{
+              fontFamily: "'Inter', sans-serif",
+              fontSize: "clamp(1.8rem, 4.5vw, 3.5rem)",
+              fontWeight: 900,
+              letterSpacing: "0.04em",
+              textTransform: "uppercase",
+              color: "#fff",
+              lineHeight: 1.05,
+              marginBottom: "0.75rem",
+            }}
           >
-            {slides[currentSlide].title}
+            <span
+              style={{
+                background: "#000",
+                padding: "0.1em 0.3em",
+                display: "inline",
+                boxDecorationBreak: "clone",
+                WebkitBoxDecorationBreak: "clone",
+              }}
+            >
+              {slide.headline}
+            </span>
           </h2>
 
+          {/* Tagline */}
           <p
-            key={`subtitle-${currentSlide}`}
-            className="text-gray-200 text-lg md:text-xl lg:text-2xl mt-2 slide-up-anim-delay"
+            style={{
+              fontFamily: "'Inter', sans-serif",
+              fontSize: "clamp(0.8rem, 1.5vw, 1rem)",
+              fontWeight: 400,
+              color: "#fff",
+              lineHeight: 1.5,
+              marginBottom: "1.5rem",
+              maxWidth: "480px",
+            }}
           >
-            {slides[currentSlide].subtitle}
+            <span
+              style={{
+                background: "#000",
+                padding: "0.15em 0.3em",
+                display: "inline",
+                boxDecorationBreak: "clone",
+                WebkitBoxDecorationBreak: "clone",
+              }}
+            >
+              {slide.tagline}
+            </span>
           </p>
+
+          {/* CTA Buttons — Adidas outline style with arrows */}
+          <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+            {slide.ctas.map((cta, i) => (
+              <Link
+                key={i}
+                to={cta.link}
+                className="group"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.6rem",
+                  padding: "0.85rem 1.5rem",
+                  background: i === 0 ? "#fff" : "transparent",
+                  color: i === 0 ? "#000" : "#fff",
+                  border: i === 0 ? "2px solid #fff" : "2px solid #fff",
+                  fontFamily: "'Inter', sans-serif",
+                  fontSize: "0.75rem",
+                  fontWeight: 700,
+                  letterSpacing: "0.06em",
+                  textTransform: "uppercase",
+                  textDecoration: "none",
+                  cursor: "pointer",
+                  transition: "all 0.25s ease",
+                  position: "relative",
+                  overflow: "hidden",
+                }}
+                onMouseEnter={(e) => {
+                  if (i === 0) {
+                    e.currentTarget.style.background = "#000";
+                    e.currentTarget.style.color = "#fff";
+                  } else {
+                    e.currentTarget.style.background = "#fff";
+                    e.currentTarget.style.color = "#000";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (i === 0) {
+                    e.currentTarget.style.background = "#fff";
+                    e.currentTarget.style.color = "#000";
+                  } else {
+                    e.currentTarget.style.background = "transparent";
+                    e.currentTarget.style.color = "#fff";
+                  }
+                }}
+              >
+                {cta.label}
+                <ArrowRight
+                  size={16}
+                  style={{
+                    transition: "transform 0.3s ease",
+                  }}
+                  className="group-hover:translate-x-1"
+                />
+              </Link>
+            ))}
+          </div>
         </div>
+      </div>
 
-        {/* CTA */}
-        <Link
-          to={slides[currentSlide].link}
-          className="group relative flex items-center justify-center gap-3 bg-white text-black px-12 py-5 uppercase tracking-[0.25em] text-xs font-bold min-w-[220px] overflow-hidden transition-colors hover:text-white"
+      {/* ═══ Navigation Arrows ═══ */}
+      <button
+        onClick={handlePrev}
+        aria-label="Previous slide"
+        className="absolute left-4 top-1/2 -translate-y-1/2 z-30 hidden md:flex items-center justify-center"
+        style={{
+          width: "48px",
+          height: "48px",
+          background: "rgba(255,255,255,0.1)",
+          backdropFilter: "blur(4px)",
+          border: "1px solid rgba(255,255,255,0.2)",
+          color: "#fff",
+          cursor: "pointer",
+          transition: "all 0.2s ease",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = "#fff";
+          e.currentTarget.style.color = "#000";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = "rgba(255,255,255,0.1)";
+          e.currentTarget.style.color = "#fff";
+        }}
+      >
+        <ChevronLeft size={20} />
+      </button>
+
+      <button
+        onClick={handleNext}
+        aria-label="Next slide"
+        className="absolute right-4 top-1/2 -translate-y-1/2 z-30 hidden md:flex items-center justify-center"
+        style={{
+          width: "48px",
+          height: "48px",
+          background: "rgba(255,255,255,0.1)",
+          backdropFilter: "blur(4px)",
+          border: "1px solid rgba(255,255,255,0.2)",
+          color: "#fff",
+          cursor: "pointer",
+          transition: "all 0.2s ease",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = "#fff";
+          e.currentTarget.style.color = "#000";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = "rgba(255,255,255,0.1)";
+          e.currentTarget.style.color = "#fff";
+        }}
+      >
+        <ChevronRight size={20} />
+      </button>
+
+      {/* ═══ Progress Indicators (bottom-right) ═══ */}
+      <div
+        className="absolute bottom-8 right-8 z-30 hidden md:flex items-center gap-3"
+      >
+        {heroSets.map((_, idx) => (
+          <button
+            key={idx}
+            onClick={() => {
+              clearInterval(intervalRef.current);
+              goTo(idx);
+            }}
+            aria-label={`Go to slide ${idx + 1}`}
+            style={{
+              width: idx === current ? "32px" : "12px",
+              height: "3px",
+              background: idx === current ? "#fff" : "rgba(255,255,255,0.4)",
+              border: "none",
+              cursor: "pointer",
+              transition: "all 0.4s ease",
+            }}
+          />
+        ))}
+
+        {/* Slide counter */}
+        <span
+          style={{
+            fontFamily: "'Inter', sans-serif",
+            fontSize: "0.65rem",
+            fontWeight: 500,
+            letterSpacing: "0.15em",
+            color: "rgba(255,255,255,0.6)",
+            marginLeft: "0.5rem",
+          }}
         >
-          <span className="relative z-10 flex items-center gap-3">
-            {slides[currentSlide].cta}
-            <ArrowRight
-              size={16}
-              className="transition-transform duration-300 group-hover:translate-x-1"
-            />
-          </span>
-
-          <div className="absolute inset-0 bg-black translate-y-full transition-transform duration-300 group-hover:translate-y-0"></div>
-        </Link>
+          {String(current + 1).padStart(2, "0")} / {String(heroSets.length).padStart(2, "0")}
+        </span>
       </div>
 
-      {/* Desktop Pagination */}
-      <div className="absolute right-10 top-1/2 -translate-y-1/2 hidden lg:flex flex-col gap-4 z-20">
-        {slides.map((_, idx) => (
+      {/* ═══ Mobile dots ═══ */}
+      <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 md:hidden z-30">
+        {heroSets.map((_, idx) => (
           <button
             key={idx}
-            onClick={() => setCurrentSlide(idx)}
-            className={`rounded-full transition-all duration-500 ${
-              idx === currentSlide
-                ? "w-[3px] h-16 bg-white"
-                : "w-[3px] h-4 bg-white/40 hover:h-8"
-            }`}
+            onClick={() => {
+              clearInterval(intervalRef.current);
+              goTo(idx);
+            }}
+            style={{
+              width: idx === current ? "24px" : "8px",
+              height: "3px",
+              background: idx === current ? "#fff" : "rgba(255,255,255,0.4)",
+              border: "none",
+              cursor: "pointer",
+              transition: "all 0.4s ease",
+            }}
           />
         ))}
       </div>
 
-      {/* Mobile Pagination */}
-      <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-3 lg:hidden z-20">
-        {slides.map((_, idx) => (
-          <button
-            key={idx}
-            onClick={() => setCurrentSlide(idx)}
-            className={`transition-all duration-500 ${
-              idx === currentSlide
-                ? "w-10 h-[3px] bg-white"
-                : "w-4 h-[3px] bg-white/40"
-            }`}
-          />
-        ))}
-      </div>
-
-      {/* Animations */}
+      {/* ═══ Mobile: stack panels vertically ═══ */}
       <style
         dangerouslySetInnerHTML={{
           __html: `
-        .slide-up-anim {
-            animation: slideUp 1s cubic-bezier(.16,1,.3,1) forwards;
-        }
-
-        .slide-up-anim-delay {
-            animation: slideUp 1.2s cubic-bezier(.16,1,.3,1) forwards;
-        }
-
-        @keyframes slideUp {
-            from {
-                transform: translateY(80%);
-                opacity:0;
+            @media (max-width: 768px) {
+              .grid[style*="grid-template-columns"] {
+                grid-template-columns: 1fr !important;
+                grid-template-rows: 1fr 0.5fr !important;
+                height: calc(100dvh - 64px) !important;
+              }
+              .grid[style*="grid-template-columns"] > div:nth-child(3) {
+                display: none;
+              }
             }
-            to {
-                transform: translateY(0);
-                opacity:1;
-            }
-        }
-        `,
+          `,
         }}
       />
     </section>

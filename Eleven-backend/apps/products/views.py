@@ -2,12 +2,12 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny
-from rest_framework.pagination import PageNumberPagination
 from rest_framework.generics import ListAPIView, CreateAPIView
 from rest_framework.filters import OrderingFilter, SearchFilter
 
 from django.shortcuts import get_object_or_404
-from django.db.models import Q
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 
 from .models import Product, Category, ProductVariant, ProductImage
 from .serializers import (
@@ -18,23 +18,14 @@ from .serializers import (
     ProductVariantSerializer,
     ProductImageUploadSerializer
 )
-
+from .pagination import ProductPagination
 from apps.accounts.permissions import IsAdminUserRole
 
 
-# Pagination
-class ProductPagination(PageNumberPagination):
-    page_size = 10
-    page_size_query_param = "page_size"
-    max_page_size = 50
-
-
-# MAIN PRODUCT LIST (Search + Filter + Sort + Pagination)
 class ProductListView(ListAPIView):
     permission_classes = [AllowAny]
     serializer_class = ProductListSerializer
     pagination_class = ProductPagination
-
     filter_backends = [OrderingFilter, SearchFilter]
     search_fields = ["name", "description"]
     ordering_fields = ["price", "created_at", "name"]
@@ -46,49 +37,33 @@ class ProductListView(ListAPIView):
             .select_related("category")
             .prefetch_related("images", "variants")
         )
-
-        #  Category (supports multiple ?category=men&category=women)
         categories = self.request.GET.getlist("category")
         if categories:
             queryset = queryset.filter(category__slug__in=categories)
-
-        #  Featured
         is_featured = self.request.GET.get("is_featured")
         if is_featured:
             queryset = queryset.filter(is_featured=is_featured.lower() == "true")
-
-        #  New
         is_new = self.request.GET.get("is_new")
         if is_new:
             queryset = queryset.filter(is_new=is_new.lower() == "true")
-
-        # Price Range
         min_price = self.request.GET.get("min_price")
         max_price = self.request.GET.get("max_price")
-
         if min_price:
             queryset = queryset.filter(price__gte=min_price)
         if max_price:
             queryset = queryset.filter(price__lte=max_price)
-
-        #  Variant Filters
         size = self.request.GET.get("size")
         color = self.request.GET.get("color")
-
         if size:
             queryset = queryset.filter(variants__size__iexact=size)
         if color:
             queryset = queryset.filter(variants__color__iexact=color)
-
-        #  In Stock Only
         in_stock = self.request.GET.get("in_stock")
         if in_stock and in_stock.lower() == "true":
             queryset = queryset.filter(variants__stock__gt=0)
-
         return queryset.distinct()
 
 
-# Product Detail
 class ProductDetailView(APIView):
     permission_classes = [AllowAny]
 
@@ -96,14 +71,12 @@ class ProductDetailView(APIView):
         product = get_object_or_404(
             Product.objects.select_related("category")
             .prefetch_related("images", "variants"),
-            pk=pk,
-            is_active=True
+            pk=pk, is_active=True
         )
         serializer = ProductSerializer(product)
         return Response(serializer.data)
 
 
-#  Create Product
 class ProductCreateView(APIView):
     permission_classes = [IsAdminUserRole]
 
@@ -115,7 +88,6 @@ class ProductCreateView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-#  Update Product
 class ProductUpdateView(APIView):
     permission_classes = [IsAdminUserRole]
 
@@ -128,51 +100,42 @@ class ProductUpdateView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-#  Delete Product
 class ProductDeleteView(APIView):
     permission_classes = [IsAdminUserRole]
 
     def delete(self, request, pk):
         product = get_object_or_404(Product, pk=pk)
         product.delete()
-        return Response(
-            {"message": "Product deleted successfully"},
-            status=status.HTTP_204_NO_CONTENT
-        )
+        return Response({"message": "Product deleted"}, status=status.HTTP_204_NO_CONTENT)
 
 
-#  Category List
 class CategoryListView(APIView):
     permission_classes = [AllowAny]
 
+    @method_decorator(cache_page(300))
     def get(self, request):
         categories = Category.objects.all().order_by("name")
         serializer = CategorySerializer(categories, many=True)
         return Response(serializer.data)
 
 
-#  Create Variant
 class ProductVariantCreateView(CreateAPIView):
     queryset = ProductVariant.objects.all()
     serializer_class = ProductVariantSerializer
     permission_classes = [IsAdminUserRole]
 
 
-# Upload Image
 class ProductImageCreateView(CreateAPIView):
     queryset = ProductImage.objects.all()
     serializer_class = ProductImageUploadSerializer
     permission_classes = [IsAdminUserRole]
 
     def post(self, request, *args, **kwargs):
-        # Allow linking image via URL param or body
         product_id = self.kwargs.get("pk") or request.data.get("product")
         if not product_id:
-             return Response({"error": "Product ID is required"}, status=status.HTTP_400_BAD_REQUEST)
-        
+            return Response({"error": "Product ID is required"}, status=status.HTTP_400_BAD_REQUEST)
         data = request.data.copy()
         data["product"] = product_id
-
         serializer = self.get_serializer(data=data)
         if serializer.is_valid():
             serializer.save()

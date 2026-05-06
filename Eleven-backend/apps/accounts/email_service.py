@@ -21,6 +21,5 @@ Thank you for joining us.
         message,
         settings.DEFAULT_FROM_EMAIL,
         [user.email],
-        fail_silently=False,
+        fail_silently=True,
     )
-

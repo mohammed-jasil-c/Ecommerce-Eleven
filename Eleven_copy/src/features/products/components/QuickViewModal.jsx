@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../../cart/context/CartContext";
 import { useWishlist } from "../../wishlist/components/WishList";
 import { useAuth } from "../../auth/context/AuthContext";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import api from "../../../api/apiService";
 
 const QuickViewModal = ({ product, isOpen, onClose }) => {

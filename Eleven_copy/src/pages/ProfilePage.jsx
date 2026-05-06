@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import gsap from "gsap";
 import api from "../api/apiService";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { User, Save } from "lucide-react";
 
 const ProfilePage = () => {

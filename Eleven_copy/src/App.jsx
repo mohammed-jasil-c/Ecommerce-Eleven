@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import { useLocation } from "react-router-dom";
 import { Routes, Route } from "react-router-dom";
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { Toaster } from "sonner";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
@@ -182,19 +181,8 @@ function App() {
       </AppLayout>
 
 
-      {/* Toast Container for notifications */}
-      <ToastContainer
-        position="bottom-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="light"
-      />
+      {/* Toaster for notifications */}
+      <Toaster position="bottom-right" richColors />
     </>
   );
 }

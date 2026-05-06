@@ -4,7 +4,7 @@ import { useNavigate, Link } from "react-router-dom";
 import gsap from "gsap";
 import api from "../../../api/apiService";
 import { AuthContext } from "../context/AuthContext";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 const Login = () => {
   const { login } = useContext(AuthContext);

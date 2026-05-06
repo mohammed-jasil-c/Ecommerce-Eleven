@@ -5,7 +5,7 @@ import api from "../../../api/apiService";
 import { useCart } from "../../cart/context/CartContext";
 import { useWishlist } from "../../wishlist/components/WishList";
 import { useAuth } from "../../auth/context/AuthContext";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 import { ShoppingBag, Heart, ArrowLeft, Check } from "lucide-react";
 
@@ -126,11 +126,18 @@ const ProductDetails = () => {
     (v) => v.size === selectedSize && v.color === selectedColor
   );
 
-  // If only one size/color exists, auto-select it once loaded
-  if (variants.length > 0) {
-    if (uniqueSizes.length === 1 && !selectedSize) setSelectedSize(uniqueSizes[0]);
-    if (availableColorsForSize.length === 1 && !selectedColor) setSelectedColor(availableColorsForSize[0]);
-  }
+  // Auto-select size/color if only one option exists (moved to useEffect to avoid setState during render)
+  useEffect(() => {
+    if (variants.length > 0) {
+      if (uniqueSizes.length === 1 && !selectedSize) setSelectedSize(uniqueSizes[0]);
+    }
+  }, [variants, uniqueSizes, selectedSize]);
+
+  useEffect(() => {
+    if (variants.length > 0 && selectedSize) {
+      if (availableColorsForSize.length === 1 && !selectedColor) setSelectedColor(availableColorsForSize[0]);
+    }
+  }, [variants, selectedSize, availableColorsForSize, selectedColor]);
 
   const isInStock = selectedVariant ? selectedVariant.stock > 0 : false;
   const wishlisted = isInWishlist(selectedVariant?.id || product.id);

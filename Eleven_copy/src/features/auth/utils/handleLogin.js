@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../../api/apiService";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 export const useBlockCheck = () => {
   const navigate = useNavigate();
@@ -19,7 +19,7 @@ export const useBlockCheck = () => {
         if (data.is_blocked) {
           // Clear storage
           localStorage.removeItem("access");
-          localStorage.removeItem("user");
+          localStorage.removeItem("refresh");
 
           toast.error("🚫 Your account has been blocked by admin!", {
             position: "top-center",
@@ -35,7 +35,7 @@ export const useBlockCheck = () => {
 
     checkIfBlocked();
 
-    const interval = setInterval(checkIfBlocked, 15000); // every 15 sec
+    const interval = setInterval(checkIfBlocked, 60000); // every 60 sec
 
     return () => clearInterval(interval);
   }, [navigate]);

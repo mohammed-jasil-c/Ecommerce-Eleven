@@ -1,13 +1,14 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.generics import RetrieveAPIView
 from rest_framework import status
+
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.conf import settings
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
-from .email_service import send_order_confirmation_email
 
 import stripe
 
@@ -16,6 +17,7 @@ from apps.products.models import ProductVariant
 from apps.accounts.permissions import IsAdminUserRole
 from .models import Order, OrderItem, Payment
 from .serializers import OrderSerializer
+from .email_service import send_order_confirmation_email
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
@@ -73,40 +75,45 @@ class CheckoutView(APIView):
     @transaction.atomic
     def post(self, request):
 
-        cart = Cart.objects.filter(user=request.user).first()
+        cart = (
+            Cart.objects
+            .prefetch_related("items__variant__product")
+            .filter(user=request.user)
+            .first()
+        )
 
         if not cart or not cart.items.exists():
             return Response({"error": "Cart is empty"}, status=400)
 
+        # Single pass: validate stock and compute total
+        cart_items = list(cart.items.select_related("variant__product").all())
         total_amount = 0
 
-  
-        for item in cart.items.all():
+        for item in cart_items:
             if item.variant.stock < item.quantity:
                 return Response(
                     {"error": f"Not enough stock for {item.variant.product.name}"},
                     status=400
                 )
+            total_amount += item.variant.product.price * item.quantity
 
         order = Order.objects.create(
             user=request.user,
             status="pending_payment",
             payment_status="pending",
-            total_amount=0
+            total_amount=total_amount
         )
 
-        for item in cart.items.all():
-            OrderItem.objects.create(
+        order_items = [
+            OrderItem(
                 order=order,
                 variant=item.variant,
                 price=item.variant.product.price,
                 quantity=item.quantity
             )
-
-            total_amount += item.variant.product.price * item.quantity
-
-        order.total_amount = total_amount
-        order.save()
+            for item in cart_items
+        ]
+        OrderItem.objects.bulk_create(order_items)
 
         payment = Payment.objects.create(
             order=order,
@@ -119,16 +126,24 @@ class CheckoutView(APIView):
             "order_id": order.id,
             "payment_id": payment.id,
             "amount": total_amount
-        }) 
-        
+        })
+
+
 class MyOrdersView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        orders = Order.objects.filter(user=request.user).order_by("-created_at")
+        orders = (
+            Order.objects
+            .filter(user=request.user)
+            .select_related("user", "shipping_address")
+            .prefetch_related("items__variant__product__images")
+            .order_by("-created_at")
+        )
         serializer = OrderSerializer(orders, many=True)
         return Response(serializer.data)
-    
+
+
 class UpdateOrderStatusView(APIView):
     permission_classes = [IsAdminUserRole]
 
@@ -143,15 +158,15 @@ class UpdateOrderStatusView(APIView):
         if new_status not in allowed_statuses:
             return Response({"error": "Invalid status"}, status=400)
 
-       
         if order.status in ["delivered", "refunded", "cancelled"]:
             return Response({"error": "Cannot modify this order"}, status=400)
 
         order.status = new_status
         order.save()
 
-        return Response({"message": "Order status updated"})                    
-        
+        return Response({"message": "Order status updated"})
+
+
 class CreateStripePaymentIntentView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -180,11 +195,10 @@ class CreateStripePaymentIntentView(APIView):
         order.payment.save()
 
         return Response({"client_secret": intent.client_secret})
-    
-    
+
+
 @csrf_exempt
 def stripe_webhook(request):
-    
 
     payload = request.body
     sig_header = request.META.get("HTTP_STRIPE_SIGNATURE")
@@ -199,12 +213,13 @@ def stripe_webhook(request):
         return HttpResponse(status=400)
 
     if event["type"] == "payment_intent.succeeded":
-        print("PAYMENT SUCCEEDED WEBHOOK CALLED")
-
         intent = event["data"]["object"]
         order_id = intent["metadata"]["order_id"]
 
-        order = Order.objects.get(id=order_id)
+        try:
+            order = Order.objects.get(id=order_id)
+        except Order.DoesNotExist:
+            return HttpResponse(status=400)
 
         if order.payment_status == "paid":
             return HttpResponse(status=200)
@@ -216,7 +231,7 @@ def stripe_webhook(request):
         order.payment_status = "paid"
         order.save()
 
-        for item in order.items.all():
+        for item in order.items.select_related("variant").all():
             variant = item.variant
             variant.stock -= item.quantity
             variant.save()
@@ -224,16 +239,20 @@ def stripe_webhook(request):
         cart = Cart.objects.filter(user=order.user).first()
         if cart:
             cart.items.all().delete()
+
         send_order_confirmation_email(order)
 
-
+        return HttpResponse(status=200)
 
     if event["type"] == "payment_intent.payment_failed":
 
         intent = event["data"]["object"]
         order_id = intent["metadata"]["order_id"]
 
-        order = Order.objects.get(id=order_id)
+        try:
+            order = Order.objects.get(id=order_id)
+        except Order.DoesNotExist:
+            return HttpResponse(status=400)
 
         order.payment.status = "failed"
         order.payment.save()
@@ -276,9 +295,8 @@ class RetryPaymentView(APIView):
         order.save()
 
         return Response({"client_secret": intent.client_secret})
-    
-    
-    
+
+
 class RefundOrderView(APIView):
     permission_classes = [IsAdminUserRole]
 
@@ -302,23 +320,12 @@ class RefundOrderView(APIView):
         order.save()
 
         # Restore stock
-        for item in order.items.all():
+        for item in order.items.select_related("variant").all():
             variant = item.variant
             variant.stock += item.quantity
             variant.save()
 
         return Response({"message": "Refund successful"})
-    
-    
-    
-    
-    
-class MyOrdersView(APIView):
-        permission_classes = [IsAuthenticated]
-        def get(self, request):
-            orders = Order.objects.filter(user=request.user).order_by("-created_at")
-            serializer = OrderSerializer(orders, many=True)
-            return Response(serializer.data)
 
 
 class OrderDetailView(APIView):
@@ -326,7 +333,9 @@ class OrderDetailView(APIView):
 
     def get(self, request, order_id):
         order = get_object_or_404(
-            Order,
+            Order.objects
+            .select_related("user", "shipping_address")
+            .prefetch_related("items__variant__product__images"),
             id=order_id,
             user=request.user
         )
@@ -338,24 +347,27 @@ class AdminOrderListView(APIView):
     permission_classes = [IsAdminUserRole]
 
     def get(self, request):
-        orders = Order.objects.all().order_by("-created_at")
+        orders = (
+            Order.objects
+            .select_related("user", "shipping_address")
+            .prefetch_related("items__variant__product__images")
+            .all()
+            .order_by("-created_at")
+        )
         serializer = OrderSerializer(orders, many=True)
-        return Response(serializer.data)                
-    
-from rest_framework.generics import RetrieveAPIView
-from rest_framework.permissions import IsAdminUser
-from .models import Order
-from .serializers import OrderSerializer
+        return Response(serializer.data)
+
 
 class AdminOrderDetailView(RetrieveAPIView):
-    queryset = Order.objects.all()
+    queryset = (
+        Order.objects
+        .select_related("user", "shipping_address")
+        .prefetch_related("items__variant__product__images")
+    )
     serializer_class = OrderSerializer
     permission_classes = [IsAdminUser]
     lookup_field = "id"
     lookup_url_kwarg = "order_id"
-    
-    
-from .models import Order
 
 
 class CancelOrderView(APIView):
@@ -365,13 +377,14 @@ class CancelOrderView(APIView):
         try:
             order = Order.objects.get(id=order_id, user=request.user)
 
-            if order.status not in ["PENDING", "PROCESSING"]:
+            # Use lowercase statuses matching the model's STATUS_CHOICES
+            if order.status not in ["pending_payment", "processing"]:
                 return Response(
                     {"error": "Order cannot be cancelled."},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            order.status = "CANCELLED"
+            order.status = "cancelled"
             order.save()
 
             return Response({"message": "Order cancelled successfully."})
@@ -380,73 +393,80 @@ class CancelOrderView(APIView):
             return Response(
                 {"error": "Order not found."},
                 status=status.HTTP_404_NOT_FOUND
-            )    
-        
+            )
+
 
 class AttachOrderAddressView(APIView):
     permission_classes = [IsAuthenticated]
-    
+
     def put(self, request, order_id):
         order = get_object_or_404(Order, id=order_id, user=request.user)
         address_id = request.data.get("address_id")
-        
+
         if not address_id:
             return Response({"error": "Shipping address is required"}, status=400)
-            
+
         from apps.accounts.models import Address
         address = get_object_or_404(Address, id=address_id, user=request.user)
-        
+
         order.shipping_address = address
         order.payment_method = "stripe"
         order.save()
-        
+
         return Response({"message": "Address attached to order"})
 
 
 class ConfirmCODView(APIView):
     permission_classes = [IsAuthenticated]
-    
+
     @transaction.atomic
     def post(self, request, order_id):
         order = get_object_or_404(Order, id=order_id, user=request.user)
         address_id = request.data.get("address_id")
-        
+
         if not address_id:
             return Response({"error": "Shipping address is required"}, status=400)
-            
+
         from apps.accounts.models import Address
         address = get_object_or_404(Address, id=address_id, user=request.user)
-        
+
         if order.status != "pending_payment":
             return Response({"error": "Order cannot be confirmed"}, status=400)
-            
+
+        # Validate stock BEFORE changing order status
+        order_items = list(order.items.select_related("variant__product").all())
+        for item in order_items:
+            if item.variant.stock < item.quantity:
+                return Response(
+                    {"error": f"Not enough stock for {item.variant.product.name}"},
+                    status=400
+                )
+
+        # Now safe to update order
         order.shipping_address = address
         order.payment_method = "cod"
         order.status = "processing"
-        order.payment_status = "pending" # COD means it is paid on delivery
+        order.payment_status = "pending"  # COD means it is paid on delivery
         order.save()
-        
+
         # update payment model
         order.payment.status = "pending"
         order.payment.save()
-        
+
         # reduce stock
-        for item in order.items.all():
-            if item.variant.stock < item.quantity:
-                return Response({"error": f"Not enough stock for {item.variant.product.name}"}, status=400)
+        for item in order_items:
             item.variant.stock -= item.quantity
             item.variant.save()
-            
+
         # clear cart
         cart = Cart.objects.filter(user=request.user).first()
         if cart:
             cart.items.all().delete()
-            
-        # send email maybe
+
+        # send email
         try:
-            from .email_service import send_order_confirmation_email
             send_order_confirmation_email(order)
         except Exception as e:
             print("Failed to send COD order email:", e)
-            
+
         return Response({"message": "Order confirmed via COD", "order_id": order.id})

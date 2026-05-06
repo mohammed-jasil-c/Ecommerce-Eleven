@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../../features/cart/context/CartContext";
 import { useWishlist } from "../../features/wishlist/components/WishList";
 import { useAuth } from "../../features/auth/context/AuthContext";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { ShoppingBag, Heart, Eye, Check } from "lucide-react";
 import QuickViewModal from "../../features/products/components/QuickViewModal";
 import api from "../../api/apiService";

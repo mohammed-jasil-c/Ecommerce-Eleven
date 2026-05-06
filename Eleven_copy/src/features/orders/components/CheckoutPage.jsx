@@ -5,7 +5,7 @@ import StripeProvider from "../../checkout/payments/StripeProvider";
 import StripeCheckout from "../../checkout/payments/StripeCheckout";
 import OrderSummary from "./OrderSummary";
 import { Lock, CreditCard, ChevronLeft, Shield, MapPin, Truck, Plus, CheckCircle2 } from "lucide-react";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 /* ─── Loading Skeleton ─── */
 const PaymentSkeleton = () => (

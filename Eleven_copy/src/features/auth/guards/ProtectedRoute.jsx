@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 const ProtectedRoute = ({ children, requiredRole }) => {
   const { user, loading, logout } = useAuth();

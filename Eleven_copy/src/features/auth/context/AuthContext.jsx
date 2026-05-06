@@ -19,7 +19,6 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const initializeAuth = async () => {
       const access = localStorage.getItem("access");
-      const refresh = localStorage.getItem("refresh");
 
       if (!access) {
         setLoading(false);
@@ -27,29 +26,13 @@ export const AuthProvider = ({ children }) => {
       }
 
       try {
-        // Try normal profile request
+        // The response interceptor handles 401 → refresh automatically
         const response = await api.get("/auth/profile/");
         setUser(response.data);
       } catch (error) {
-        // If access expired → try refresh
-        if (refresh) {
-          try {
-            const refreshResponse = await api.post("/auth/refresh/", {
-              refresh: refresh,
-            });
-
-            const newAccess = refreshResponse.data.access;
-            localStorage.setItem("access", newAccess);
-
-            // Retry profile request
-            const userResponse = await api.get("/auth/profile/");
-            setUser(userResponse.data);
-          } catch (refreshError) {
-            localStorage.removeItem("access");
-            localStorage.removeItem("refresh");
-            setUser(null);
-          }
-        }
+        localStorage.removeItem("access");
+        localStorage.removeItem("refresh");
+        setUser(null);
       } finally {
         setLoading(false);
       }
@@ -72,6 +55,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     localStorage.removeItem("access");
+    localStorage.removeItem("refresh");
     setUser(null);
     window.location.href = "/login";
   };

@@ -3,6 +3,7 @@ import axios from "axios";
 const api = axios.create({
     baseURL: import.meta.env.VITE_API_URL,
     timeout: parseInt(import.meta.env.VITE_API_TIMEOUT) || 10000,
+    withCredentials: true,
     headers: {
         "Content-Type": "application/json",
     },
@@ -72,7 +73,8 @@ api.interceptors.response.use(
             try {
                 const { data } = await axios.post(
                     `${import.meta.env.VITE_API_URL}/auth/refresh/`,
-                    { refresh: refreshToken }
+                    { refresh: refreshToken },
+                    { withCredentials: true }
                 );
 
                 const newAccess = data.access;
@@ -80,6 +82,13 @@ api.interceptors.response.use(
                     import.meta.env.VITE_AUTH_TOKEN_KEY || "access",
                     newAccess
                 );
+                // Store new refresh token if returned
+                if (data.refresh) {
+                    localStorage.setItem(
+                        import.meta.env.VITE_REFRESH_TOKEN_KEY || "refresh",
+                        data.refresh
+                    );
+                }
 
                 // Update the header for the original request
                 originalRequest.headers.Authorization = `Bearer ${newAccess}`;
