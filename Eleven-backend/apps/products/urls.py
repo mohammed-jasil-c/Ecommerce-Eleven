@@ -6,6 +6,8 @@ from .views import (
     ProductUpdateView,
     ProductDeleteView,
     CategoryListView,
+    CategoryCreateView,
+    CategoryDeleteView,
     ProductVariantCreateView,
     ProductImageCreateView,
 )
@@ -13,6 +15,8 @@ from .views import (
 urlpatterns = [
     # Categories
     path("categories/", CategoryListView.as_view(), name="category-list"),
+    path("categories/create/", CategoryCreateView.as_view(), name="category-create"),
+    path("categories/<uuid:pk>/delete/", CategoryDeleteView.as_view(), name="category-delete"),
 
     # Product CRUD
     path("create/", ProductCreateView.as_view(), name="product-create"),

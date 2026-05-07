@@ -47,6 +47,12 @@ class CategorySerializer(serializers.ModelSerializer):
         return None
 
 
+class CategoryCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ["id", "name", "slug", "image"]
+
+
 
 class ProductSerializer(serializers.ModelSerializer):
     images = ProductImageSerializer(many=True, read_only=True)
@@ -64,6 +70,7 @@ class ProductSerializer(serializers.ModelSerializer):
             "original_price",
             "discount_percentage",
             "category",
+            "gender",
             "is_featured",
             "is_new",
             "is_active",
@@ -95,6 +102,7 @@ class ProductListSerializer(serializers.ModelSerializer):
             "discount_percentage",
             "image",
             "category",
+            "gender",
             "is_featured",
             "is_new",
             "variants",

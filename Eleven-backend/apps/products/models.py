@@ -15,6 +15,13 @@ class Category(models.Model):
 
 
 class Product(models.Model):
+    GENDER_CHOICES = (
+        ("men", "Men"),
+        ("women", "Women"),
+        ("kids", "Kids"),
+        ("unisex", "Unisex"),
+    )
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     name = models.CharField(max_length=255, db_index=True)
@@ -28,6 +35,13 @@ class Product(models.Model):
         on_delete=models.CASCADE,
         related_name="products",
         db_index=True
+    )
+
+    gender = models.CharField(
+        max_length=10,
+        choices=GENDER_CHOICES,
+        default="unisex",
+        db_index=True,
     )
 
     is_featured = models.BooleanField(default=False, db_index=True)

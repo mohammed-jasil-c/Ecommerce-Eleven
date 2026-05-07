@@ -14,6 +14,7 @@ from .serializers import (
     ProductSerializer,
     ProductCreateUpdateSerializer,
     CategorySerializer,
+    CategoryCreateSerializer,
     ProductListSerializer,
     ProductVariantSerializer,
     ProductImageUploadSerializer
@@ -40,6 +41,9 @@ class ProductListView(ListAPIView):
         categories = self.request.GET.getlist("category")
         if categories:
             queryset = queryset.filter(category__slug__in=categories)
+        gender = self.request.GET.get("gender")
+        if gender:
+            queryset = queryset.filter(gender=gender.lower())
         is_featured = self.request.GET.get("is_featured")
         if is_featured:
             queryset = queryset.filter(is_featured=is_featured.lower() == "true")
@@ -112,11 +116,30 @@ class ProductDeleteView(APIView):
 class CategoryListView(APIView):
     permission_classes = [AllowAny]
 
-    @method_decorator(cache_page(300))
     def get(self, request):
         categories = Category.objects.all().order_by("name")
         serializer = CategorySerializer(categories, many=True)
         return Response(serializer.data)
+
+
+class CategoryCreateView(APIView):
+    permission_classes = [IsAdminUserRole]
+
+    def post(self, request):
+        serializer = CategoryCreateSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CategoryDeleteView(APIView):
+    permission_classes = [IsAdminUserRole]
+
+    def delete(self, request, pk):
+        category = get_object_or_404(Category, pk=pk)
+        category.delete()
+        return Response({"message": "Category deleted"}, status=status.HTTP_204_NO_CONTENT)
 
 
 class ProductVariantCreateView(CreateAPIView):

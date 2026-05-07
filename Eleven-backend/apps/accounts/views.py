@@ -13,7 +13,11 @@ from rest_framework.generics import (
 
 from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.password_validation import validate_password
+from django.conf import settings
 from rest_framework_simplejwt.tokens import RefreshToken
+
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
 
 from .models import Address
 from .permissions import IsAdminUserRole
@@ -247,3 +251,80 @@ class ChangePasswordView(APIView):
             return Response({"message": "Password changed successfully."})
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class GoogleLoginView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        credential = request.data.get("credential")
+
+        if not credential:
+            return Response(
+                {"error": "Google credential is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            # Verify the Google ID token
+            idinfo = id_token.verify_oauth2_token(
+                credential,
+                google_requests.Request(),
+                settings.GOOGLE_CLIENT_ID,
+            )
+
+            email = idinfo.get("email")
+            if not email:
+                return Response(
+                    {"error": "Email not found in Google token."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Find or create user
+            user, created = User.objects.get_or_create(
+                email=email,
+                defaults={
+                    "full_name": idinfo.get("name", ""),
+                    "first_name": idinfo.get("given_name", ""),
+                    "last_name": idinfo.get("family_name", ""),
+                    "is_verified": True,
+                },
+            )
+
+            if created:
+                user.set_unusable_password()
+                user.save()
+                # Send welcome email for new Google users
+                send_welcome_email(user)
+
+            # Block check
+            if user.is_blocked:
+                return Response(
+                    {"error": "Your account has been blocked. Please contact support."},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
+            # Issue JWT tokens (same as LoginView)
+            refresh = RefreshToken.for_user(user)
+            access = refresh.access_token
+
+            response = Response({
+                "access": str(access),
+                "refresh": str(refresh),
+            })
+
+            response.set_cookie(
+                key="refresh_token",
+                value=str(refresh),
+                httponly=True,
+                secure=False,
+                samesite="Lax",
+            )
+
+            return response
+
+        except ValueError as e:
+            return Response(
+                {"error": f"Invalid Google token: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )

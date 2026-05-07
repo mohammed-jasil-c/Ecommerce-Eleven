@@ -10,7 +10,8 @@ from .views import (
                     Register,
                     AdminUserDeleteView,
                     AdminUserDetailView,
-                    AdminUserUpdateView) 
+                    AdminUserUpdateView,
+                    GoogleLoginView) 
 
 urlpatterns = [
     path("login/", LoginView.as_view()),
@@ -29,6 +30,7 @@ urlpatterns = [
     path("users/<int:pk>/update/", AdminUserUpdateView.as_view()),
     path("users/<int:pk>/delete/", AdminUserDeleteView.as_view()),
 
-
+    # Google OAuth
+    path("google/", GoogleLoginView.as_view()),
 ]
     
