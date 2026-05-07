@@ -16,6 +16,7 @@ const EditProduct = () => {
     price: "",
     original_price: "",
     category: "",
+    gender: "",
     description: "",
     is_featured: false,
     is_new: false,
@@ -45,6 +46,7 @@ const EditProduct = () => {
         price: product.price || "",
         original_price: product.original_price || "",
         category: product.category?.id || "",
+        gender: product.gender || "",
         description: product.description || "",
         is_featured: product.is_featured || false,
         is_new: product.is_new || false,
@@ -163,15 +165,27 @@ const EditProduct = () => {
               </div>
             </div>
 
-            {/* Category */}
-            <div style={{ marginBottom: "1.25rem" }}>
-              <label style={labelStyle}>Category</label>
-              <select name="category" value={formData.category} onChange={handleChange} required style={{ ...inputStyle, cursor: "pointer" }}>
-                <option value="">Select Category</option>
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>{cat.name}</option>
-                ))}
-              </select>
+            {/* Category and Gender */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4" style={{ marginBottom: "1.25rem" }}>
+              <div>
+                <label style={labelStyle}>Category</label>
+                <select name="category" value={formData.category} onChange={handleChange} required style={{ ...inputStyle, cursor: "pointer" }}>
+                  <option value="">Select Category</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle}>Gender</label>
+                <select name="gender" value={formData.gender} onChange={handleChange} required style={{ ...inputStyle, cursor: "pointer" }}>
+                  <option value="">Select Gender</option>
+                  <option value="men">Men</option>
+                  <option value="women">Women</option>
+                  <option value="kids">Kids</option>
+                  <option value="unisex">Unisex</option>
+                </select>
+              </div>
             </div>
 
             {/* Description */}

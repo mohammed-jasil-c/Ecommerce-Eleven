@@ -1,10 +1,13 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useContext, useRef, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { GoogleLogin } from "@react-oauth/google";
 import gsap from "gsap";
 import api from "../../../api/apiService";
+import { AuthContext } from "../context/AuthContext";
 import { toast } from "sonner";
 
 const Registration = () => {
+  const { login } = useContext(AuthContext);
   const navigate = useNavigate();
   const cardRef = useRef(null);
 
@@ -16,6 +19,7 @@ const Registration = () => {
   });
 
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   useEffect(() => {
     if (cardRef.current) {
@@ -68,6 +72,36 @@ const Registration = () => {
     }
   };
 
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setGoogleLoading(true);
+    try {
+      const response = await api.post("/auth/google/", {
+        credential: credentialResponse.credential,
+      });
+
+      const accessToken = response.data.access;
+      const refreshToken = response.data.refresh;
+
+      localStorage.setItem("access", accessToken);
+      localStorage.setItem("refresh", refreshToken);
+
+      const userResponse = await api.get("/auth/profile/");
+      const user = userResponse.data;
+
+      login(user);
+
+      toast.success(`🎉 Welcome to Eleven, ${user.full_name || user.email}!`);
+      navigate("/", { replace: true });
+    } catch (error) {
+      console.error("Google signup error:", error);
+      toast.error(
+        error.response?.data?.error || "Google sign-up failed. Please try again."
+      );
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
   const fields = [
     { name: "fullName", label: "Full Name", type: "text", placeholder: "Enter Your Name" },
     { name: "email", label: "Email Address", type: "email", placeholder: "you@example.com" },
@@ -83,16 +117,16 @@ const Registration = () => {
       }}
     >
       <div
-  ref={cardRef}
-  className="glass-light"
-  style={{
-    maxWidth: '420px',
-    width: '100%',
-    borderRadius: 'var(--radius-lg)',
-    padding: 'clamp(1.5rem,4vw,2.5rem)',
-    opacity: 0,
-  }}
->
+        ref={cardRef}
+        className="glass-light"
+        style={{
+          maxWidth: '420px',
+          width: '100%',
+          borderRadius: 'var(--radius-lg)',
+          padding: 'clamp(1.5rem,4vw,2.5rem)',
+          opacity: 0,
+        }}
+      >
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
           <Link
             to="/"
@@ -124,6 +158,39 @@ const Registration = () => {
           <p style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>
             Join us and discover premium fashion.
           </p>
+        </div>
+
+        {/* Google Sign-Up Button */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={() => toast.error("Google sign-up failed")}
+            theme="filled_black"
+            shape="rectangular"
+            size="large"
+            width="340"
+            text="signup_with"
+          />
+        </div>
+
+        {/* Divider */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '1rem',
+          marginBottom: '1.5rem',
+        }}>
+          <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' }} />
+          <span style={{
+            fontSize: '0.7rem',
+            fontWeight: 500,
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+            color: 'var(--color-text-muted)',
+          }}>
+            or
+          </span>
+          <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' }} />
         </div>
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
@@ -158,7 +225,7 @@ const Registration = () => {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || googleLoading}
             className="btn-premium btn-primary"
             style={{
               width: '100%',

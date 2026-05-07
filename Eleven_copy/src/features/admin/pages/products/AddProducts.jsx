@@ -17,6 +17,7 @@ const AddProduct = () => {
     price: "",
     originalPrice: "",
     category: "",
+    gender: "",
     description: "",
     stock: "",
     colors: [],
@@ -85,6 +86,7 @@ const AddProduct = () => {
         price: parseFloat(formData.price),
         original_price: formData.originalPrice ? parseFloat(formData.originalPrice) : null,
         category: formData.category,
+        gender: formData.gender,
         is_featured: formData.featured,
         is_new: formData.new,
         is_active: true,
@@ -208,15 +210,25 @@ const AddProduct = () => {
               </div>
             </div>
 
-            {/* Category + Stock */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4" style={{ marginBottom: "1.25rem" }}>
+            {/* Category + Gender + Stock */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4" style={{ marginBottom: "1.25rem" }}>
               <div>
                 <label style={labelStyle}>Category</label>
                 <select name="category" value={formData.category} onChange={handleChange} required style={{ ...inputStyle, cursor: "pointer" }}>
                   <option value="">Select Category</option>
-                  {categories.map((cat) => (
+                  {categories.filter(cat => !['men', 'women', 'kids'].includes(cat.name.toLowerCase())).map((cat) => (
                     <option key={cat.id} value={cat.id}>{cat.name}</option>
                   ))}
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle}>Gender</label>
+                <select name="gender" value={formData.gender} onChange={handleChange} required style={{ ...inputStyle, cursor: "pointer" }}>
+                  <option value="">Select Gender</option>
+                  <option value="men">Men</option>
+                  <option value="women">Women</option>
+                  <option value="kids">Kids</option>
+                  <option value="unisex">Unisex</option>
                 </select>
               </div>
               <div>

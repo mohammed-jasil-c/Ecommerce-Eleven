@@ -10,6 +10,7 @@ import {
   Menu,
   X,
   ChevronRight,
+  Tags,
 } from "lucide-react";
 
 const SIDEBAR_W = 240;
@@ -39,7 +40,6 @@ const AdminLayout = () => {
           hoverTimer.current = setTimeout(() => { setOpen(true); }, 200);
         }
       } else if (e.clientX > SIDEBAR_W + 20) {
-        // Clear pending open if mouse moved away from edge
         if (hoverTimer.current) {
           clearTimeout(hoverTimer.current);
           hoverTimer.current = null;
@@ -56,6 +56,7 @@ const AdminLayout = () => {
   const navItems = [
     { path: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
     { path: "/admin/users", label: "Users", icon: Users },
+    { path: "/admin/categories", label: "Categories", icon: Tags },
     { path: "/admin/products", label: "Products", icon: Package },
     { path: "/admin/orders", label: "Orders", icon: ShoppingCart },
   ];
@@ -75,6 +76,8 @@ const AdminLayout = () => {
   const getPageTitle = () => {
     if (location.pathname === "/admin") return "Dashboard";
     if (location.pathname.includes("/admin/users")) return "Users";
+    if (location.pathname.includes("/admin/categories/add")) return "Add Category";
+    if (location.pathname.includes("/admin/categories")) return "Categories";
     if (location.pathname.includes("/admin/products/add")) return "Add Product";
     if (location.pathname.includes("/admin/products/edit")) return "Edit Product";
     if (location.pathname.includes("/admin/products")) return "Products";
@@ -241,60 +244,6 @@ const AdminLayout = () => {
             })}
           </div>
         </nav>
-
-        {/* Bottom */}
-        <div
-          style={{
-            padding: "0.75rem 1.25rem",
-            borderTop: "1px solid #f0f0f0",
-            display: "flex",
-            flexDirection: "column",
-            gap: "2px",
-          }}
-        >
-          <button
-            onClick={() => { setOpen(false); navigate("/"); }}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "0.5rem",
-              padding: "0.45rem 0",
-              fontSize: "0.75rem",
-              color: "#888",
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              fontFamily: "inherit",
-              transition: "color 0.15s ease",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = "#000")}
-            onMouseLeave={(e) => (e.currentTarget.style.color = "#888")}
-          >
-            <ExternalLink size={15} />
-            View Store
-          </button>
-          <button
-            onClick={handleLogout}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "0.5rem",
-              padding: "0.45rem 0",
-              fontSize: "0.75rem",
-              color: "#888",
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              fontFamily: "inherit",
-              transition: "color 0.15s ease",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = "#c41e3a")}
-            onMouseLeave={(e) => (e.currentTarget.style.color = "#888")}
-          >
-            <LogOut size={15} />
-            Logout
-          </button>
-        </div>
       </aside>
 
       {/* ═══ Main Content ═══ */}
@@ -317,55 +266,124 @@ const AdminLayout = () => {
             height: "56px",
             display: "flex",
             alignItems: "center",
-            gap: "0.75rem",
+            justifyContent: "space-between",
             position: "sticky",
             top: 0,
             zIndex: 30,
           }}
         >
-          {/* Hamburger */}
-          <button
-            onClick={() => setOpen(true)}
-            style={{
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              color: "#000",
-              padding: "4px",
-              display: "flex",
-              alignItems: "center",
-              transition: "color 0.15s ease",
-            }}
-            aria-label="Open menu"
-          >
-            <Menu size={20} />
-          </button>
-
-          {/* Breadcrumb */}
-          <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-            <span
+          {/* Left: Hamburger + Breadcrumb */}
+          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+            <button
+              onClick={() => setOpen(true)}
               style={{
-                fontSize: "0.65rem",
-                fontWeight: 400,
-                letterSpacing: "0.1em",
-                textTransform: "uppercase",
-                color: "#bbb",
-              }}
-            >
-              Admin
-            </span>
-            <ChevronRight size={12} style={{ color: "#ccc" }} />
-            <span
-              style={{
-                fontSize: "0.65rem",
-                fontWeight: 500,
-                letterSpacing: "0.1em",
-                textTransform: "uppercase",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
                 color: "#000",
+                padding: "4px",
+                display: "flex",
+                alignItems: "center",
+                transition: "color 0.15s ease",
+              }}
+              aria-label="Open menu"
+            >
+              <Menu size={20} />
+            </button>
+
+            {/* Breadcrumb */}
+            <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+              <span
+                style={{
+                  fontSize: "0.65rem",
+                  fontWeight: 400,
+                  letterSpacing: "0.1em",
+                  textTransform: "uppercase",
+                  color: "#bbb",
+                }}
+              >
+                Admin
+              </span>
+              <ChevronRight size={12} style={{ color: "#ccc" }} />
+              <span
+                style={{
+                  fontSize: "0.65rem",
+                  fontWeight: 500,
+                  letterSpacing: "0.1em",
+                  textTransform: "uppercase",
+                  color: "#000",
+                }}
+              >
+                {getPageTitle()}
+              </span>
+            </div>
+          </div>
+
+          {/* Right: View Store + Logout */}
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <button
+              onClick={() => navigate("/")}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.4rem",
+                padding: "0.4rem 0.75rem",
+                fontSize: "0.7rem",
+                fontWeight: 400,
+                fontFamily: "inherit",
+                letterSpacing: "0.06em",
+                color: "#666",
+                background: "none",
+                border: "1px solid #e5e5e5",
+                borderRadius: "4px",
+                cursor: "pointer",
+                transition: "all 0.15s ease",
+                whiteSpace: "nowrap",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = "#000";
+                e.currentTarget.style.color = "#000";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = "#e5e5e5";
+                e.currentTarget.style.color = "#666";
               }}
             >
-              {getPageTitle()}
-            </span>
+              <ExternalLink size={13} />
+              <span className="admin-topbar-label">View Store</span>
+            </button>
+
+            <button
+              onClick={handleLogout}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.4rem",
+                padding: "0.4rem 0.75rem",
+                fontSize: "0.7rem",
+                fontWeight: 400,
+                fontFamily: "inherit",
+                letterSpacing: "0.06em",
+                color: "#888",
+                background: "none",
+                border: "1px solid transparent",
+                borderRadius: "4px",
+                cursor: "pointer",
+                transition: "all 0.15s ease",
+                whiteSpace: "nowrap",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = "#c41e3a";
+                e.currentTarget.style.borderColor = "#fecaca";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = "#888";
+                e.currentTarget.style.borderColor = "transparent";
+              }}
+            >
+              <LogOut size={13} />
+              <span className="admin-topbar-label">Logout</span>
+            </button>
           </div>
         </header>
 
@@ -397,6 +415,15 @@ const AdminLayout = () => {
           </div>
         </footer>
       </div>
+
+      {/* Hide button labels on very small screens */}
+      <style>{`
+        @media (max-width: 480px) {
+          .admin-topbar-label {
+            display: none;
+          }
+        }
+      `}</style>
     </div>
   );
 };

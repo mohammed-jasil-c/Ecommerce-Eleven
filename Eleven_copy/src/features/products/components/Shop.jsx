@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useLocation, Link } from "react-router-dom";
+import { useLocation, Link, useNavigate } from "react-router-dom";
 import gsap from "gsap";
 import ProductCard from "../../../components/ui/ProductCard";
 import api from "../../../api/apiService";
@@ -14,10 +14,12 @@ import {
 
 const ShopPage = () => {
   const location = useLocation();
+  const navigate = useNavigate();
 
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedGender, setSelectedGender] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -30,14 +32,24 @@ const ShopPage = () => {
   const gridRef = useRef(null);
   
 
-  // Debounce Search
+  // Debounce Search & Sync to URL
   useEffect(() => {
     const handler = setTimeout(() => {
-      setDebouncedSearch(searchQuery);
-      setCurrentPage(1);
+      if (searchQuery !== debouncedSearch) {
+        setDebouncedSearch(searchQuery);
+        setCurrentPage(1);
+        
+        const params = new URLSearchParams(location.search);
+        if (searchQuery.trim()) {
+          params.set("search", searchQuery.trim());
+        } else {
+          params.delete("search");
+        }
+        navigate(`/shop?${params.toString()}`, { replace: true });
+      }
     }, 300);
     return () => clearTimeout(handler);
-  }, [searchQuery]);
+  }, [searchQuery, debouncedSearch, location.search, navigate]);
 
   useEffect(() => {
   if (searchInputRef.current) {
@@ -45,11 +57,38 @@ const ShopPage = () => {
   }
 }, [products]);
 
-  // Sync Category from URL
+  // Auto-focus search when coming from navbar search icon
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('focus_search') === 'true') {
+      params.delete('focus_search');
+      const newSearch = params.toString();
+      window.history.replaceState(null, '', `/shop${newSearch ? '?' + newSearch : ''}`);
+      setTimeout(() => {
+        const searchInput = document.getElementById('shop-sidebar-search');
+        if (searchInput) {
+          searchInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          setTimeout(() => searchInput.focus(), 300);
+        }
+      }, 500);
+    }
+  }, []);
+
+  // Sync Filters from URL
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const category = params.get("category");
     setSelectedCategory(category || "all");
+    
+    const gender = params.get("gender");
+    setSelectedGender(gender || "all");
+    
+    const search = params.get("search");
+    if (search && !searchQuery) {
+      setSearchQuery(search);
+      setDebouncedSearch(search);
+    }
+    
     setCurrentPage(1);
   }, [location.search]);
 
@@ -68,17 +107,21 @@ const ShopPage = () => {
 
   // Fetch Products
   useEffect(() => {
+    let ignore = false;
+
     const fetchProducts = async () => {
       try {
         if (products.length === 0) {
-      setLoading(true);
-}
+          setLoading(true);
+        }
 
         const params = new URLSearchParams(location.search);
         params.set("page", currentPage);
 
         if (selectedCategory !== "all") {
           params.set("category", selectedCategory);
+        } else {
+          params.delete("category");
         }
 
         if (debouncedSearch.trim()) {
@@ -86,18 +129,26 @@ const ShopPage = () => {
         }
 
         const response = await api.get(`products/?${params.toString()}`);
-        const data = response.data;
-
-        setProducts(data.results || []);
-        setNextPage(data.next);
-        setPrevPage(data.previous);
+        
+        if (!ignore) {
+          const data = response.data;
+          setProducts(data.results || []);
+          setNextPage(data.next);
+          setPrevPage(data.previous);
+        }
       } catch (error) {
-        console.error("Product fetch error:", error);
+        if (!ignore) console.error("Product fetch error:", error);
       } finally {
-        setLoading(false);
+        if (!ignore) {
+          setLoading(false);
+        }
       }
     };
     fetchProducts();
+
+    return () => {
+      ignore = true;
+    };
   }, [location.search, selectedCategory, debouncedSearch, currentPage]);
 
   // Product grid fade-in
@@ -121,15 +172,43 @@ const ShopPage = () => {
   }, [loading, products, currentPage]);
 
   const handleCategoryChange = (slug) => {
-    setSelectedCategory(slug);
-    setCurrentPage(1);
+    const params = new URLSearchParams(location.search);
+    if (slug === "all") {
+      params.delete("category");
+    } else {
+      params.set("category", slug);
+    }
+    navigate(`/shop?${params.toString()}`);
     setMobileFilterOpen(false);
   };
 
+  const handleGenderChange = (gender) => {
+    const params = new URLSearchParams(location.search);
+    if (gender === "all") {
+      params.delete("gender");
+    } else {
+      params.set("gender", gender);
+    }
+    navigate(`/shop?${params.toString()}`);
+    setMobileFilterOpen(false);
+  };
+
+  const handleClearFilters = () => {
+    setSelectedCategory("all");
+    setSelectedGender("all");
+    setSearchQuery("");
+    setCurrentPage(1);
+    setMobileFilterOpen(false);
+    navigate("/shop");
+  };
+
+  const genderLabels = { men: "Men", women: "Women", kids: "Kids" };
   const activeCategoryName =
-    selectedCategory === "all"
-      ? "All Products"
-      : categories.find((c) => c.slug === selectedCategory)?.name || "Collection";
+    selectedGender !== "all"
+      ? genderLabels[selectedGender] || selectedGender.charAt(0).toUpperCase() + selectedGender.slice(1)
+      : selectedCategory === "all"
+        ? "All Products"
+        : categories.find((c) => c.slug === selectedCategory)?.name || "Collection";
 
   const searchInputRef = useRef(null);    
 
@@ -162,6 +241,7 @@ const ShopPage = () => {
         </label>
         <div style={{ position: 'relative' }}>
           <input
+  id="shop-sidebar-search"
   ref={searchInputRef}
   type="text"
   placeholder="Search products..."
@@ -193,6 +273,55 @@ const ShopPage = () => {
         </div>
       </div>
 
+      {/* Gender Filter */}
+      <div style={{ marginBottom: '1.5rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem' }}>
+          <label style={{
+            fontSize: '0.6rem',
+            fontWeight: 500,
+            letterSpacing: '0.15em',
+            textTransform: 'uppercase',
+            color: '#000',
+          }}>
+            Gender
+          </label>
+          {(selectedCategory !== "all" || selectedGender !== "all" || searchQuery !== "") && (
+            <button
+              onClick={handleClearFilters}
+              style={{
+                fontSize: '0.55rem',
+                fontWeight: 500,
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                color: '#c41e3a',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              Clear Filters
+            </button>
+          )}
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem' }}>
+          <button
+            onClick={() => handleGenderChange("all")}
+            className={`shop-category-btn ${selectedGender === "all" ? "active" : ""}`}
+          >
+            All
+          </button>
+          {["men", "women", "kids"].map((g) => (
+            <button
+              key={g}
+              onClick={() => handleGenderChange(g)}
+              className={`shop-category-btn ${selectedGender === g ? "active" : ""}`}
+            >
+              {g.charAt(0).toUpperCase() + g.slice(1)}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Categories */}
       <div>
         <label style={{
@@ -213,7 +342,7 @@ const ShopPage = () => {
           >
             All Products
           </button>
-          {categories.map((cat) => (
+          {categories.filter(cat => !['men', 'women', 'kids'].includes(cat.name.toLowerCase())).map((cat) => (
             <button
               key={cat.id}
               onClick={() => handleCategoryChange(cat.slug)}

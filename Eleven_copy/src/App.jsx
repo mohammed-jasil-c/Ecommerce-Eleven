@@ -55,6 +55,8 @@ const OrderDetailPage = lazy(() => import("./features/orders/components/OrderDet
 const AdminLayout = lazy(() => import("./features/admin/layout/AdminLayout"));
 const AdminDashboard = lazy(() => import("./features/admin/pages/AdminDashboard"));
 const UserManagement = lazy(() => import("./features/admin/pages/users/UserManagement"));
+const CategoryManagement = lazy(() => import("./features/admin/pages/categories/CategoryManagement"));
+const AddCategory = lazy(() => import("./features/admin/pages/categories/AddCategory"));
 const ProductManagement = lazy(() => import("./features/admin/pages/products/ProductsManagement"));
 const AddProduct = lazy(() => import("./features/admin/pages/products/AddProducts"));
 const EditProduct = lazy(() => import("./features/admin/pages/products/EditProducts"));
@@ -166,6 +168,8 @@ function App() {
           >
             <Route index element={<AdminDashboard />} />
             <Route path="users" element={<UserManagement />} />
+            <Route path="categories" element={<CategoryManagement />} />
+            <Route path="categories/add" element={<AddCategory />} />
             <Route path="products" element={<ProductManagement />} />
             <Route path="products/add" element={<AddProduct />} />
             <Route path="products/edit/:productId" element={<EditProduct />} />

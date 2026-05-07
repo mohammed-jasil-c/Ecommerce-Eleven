@@ -89,10 +89,17 @@ const HomePage = () => {
               paddingBottom: '0.5rem',
             }}
           >
-            {categories.map((category) => (
+            {categories.map((category) => {
+              const genderSlugs = ['men', 'women', 'kids'];
+              const isGender = genderSlugs.includes(category.slug);
+              const linkTo = isGender
+                ? `/shop?gender=${category.slug}`
+                : `/shop?category=${category.slug}`;
+
+              return (
               <Link
                 key={category.id}
-                to={`/shop?category=${category.slug}`}
+                to={linkTo}
                 className="group flex flex-col items-center gap-2 flex-shrink-0"
                 style={{
                   textDecoration: 'none',
@@ -121,7 +128,8 @@ const HomePage = () => {
                   {category.name}
                 </p>
               </Link>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>

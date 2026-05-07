@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { AuthContext } from "../../features/auth/context/AuthContext";
 import { useCart } from "../../features/cart/context/CartContext";
 import { useWishlist } from "../../features/wishlist/components/WishList";
@@ -22,6 +22,7 @@ const Navbar = () => {
   const { cartItems, getCartCount } = useCart();
   const { getWishlistCount } = useWishlist();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 10);
@@ -45,6 +46,18 @@ const Navbar = () => {
   const navigateToSection = (path) => {
     navigate(path);
     setIsMobileMenuOpen(false);
+  };
+
+  const handleSearchClick = () => {
+    if (location.pathname === '/shop') {
+      const searchInput = document.getElementById('shop-sidebar-search');
+      if (searchInput) {
+        searchInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setTimeout(() => searchInput.focus(), 300);
+      }
+    } else {
+      navigate('/shop?focus_search=true');
+    }
   };
 
   const cartCount =
@@ -95,6 +108,8 @@ const Navbar = () => {
               style={{ gap: '2.5rem' }}
             >
               {[
+                { name: "Men", path: "/shop?gender=men" },
+                { name: "Women", path: "/shop?gender=women" },
                 { name: "New", path: "/shop?is_new=true" },
                 { name: "Shop", path: "/shop" },
                 { name: "About", path: "/about" },
@@ -128,7 +143,7 @@ const Navbar = () => {
             <div className="flex items-center" style={{ gap: '1.25rem' }}>
               {/* Desktop only icons */}
               <button
-                onClick={() => navigate("/shop")}
+                onClick={handleSearchClick}
                 className="hidden lg:flex"
                 style={{
                   border: 'none',
@@ -272,6 +287,7 @@ const Navbar = () => {
           </div>
         </div>
 
+
         {/* Mobile Menu — clean white panel */}
         {isMobileMenuOpen && (
           <>
@@ -317,6 +333,8 @@ const Navbar = () => {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
                 {[
                   { name: "Home", path: "/" },
+                  { name: "Men", path: "/shop?gender=men" },
+                  { name: "Women", path: "/shop?gender=women" },
                   { name: "New", path: "/shop?is_new=true" },
                   { name: "Shop", path: "/shop" },
                   { name: "About", path: "/about" },
