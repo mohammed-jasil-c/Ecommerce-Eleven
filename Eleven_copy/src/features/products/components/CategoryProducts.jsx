@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import api from "../../../api/apiService";
-import ProductCard from "../../../components/ui/ProductCard";
+import ProductCard from "../../../Components/ui/ProductCard";
 
 const CategoryProducts = () => {
   const { categorySlug } = useParams();

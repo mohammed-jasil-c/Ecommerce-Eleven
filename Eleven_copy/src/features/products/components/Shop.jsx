@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useLocation, Link, useNavigate } from "react-router-dom";
 import gsap from "gsap";
-import ProductCard from "../../../components/ui/ProductCard";
+import ProductCard from "../../../Components/ui/ProductCard";
 import api from "../../../api/apiService";
 import {
   Search,

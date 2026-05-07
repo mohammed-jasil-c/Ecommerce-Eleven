@@ -9,6 +9,13 @@ from .serializers import CartSerializer
 from apps.products.models import ProductVariant
 
 
+def parse_quantity(value):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
 class CartView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -26,9 +33,21 @@ class AddToCartView(APIView):
 
     def post(self, request):
         variant_id = request.data.get("variant_id")
-        quantity = request.data.get("quantity", 1)
+        quantity = parse_quantity(request.data.get("quantity", 1))
+
+        if quantity is None or quantity <= 0:
+            return Response(
+                {"error": "Quantity must be a positive integer"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         variant = get_object_or_404(ProductVariant, id=variant_id)
+
+        if variant.stock < quantity:
+            return Response(
+                {"error": "Not enough stock"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         cart, created = Cart.objects.get_or_create(user=request.user)
 
@@ -38,9 +57,15 @@ class AddToCartView(APIView):
         )
 
         if not created:
-            cart_item.quantity += int(quantity)
+            new_quantity = cart_item.quantity + quantity
+            if variant.stock < new_quantity:
+                return Response(
+                    {"error": "Not enough stock"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            cart_item.quantity = new_quantity
         else:
-            cart_item.quantity = int(quantity)
+            cart_item.quantity = quantity
 
         cart_item.save()
 
@@ -51,7 +76,13 @@ class UpdateCartItemView(APIView):
     permission_classes = [IsAuthenticated]
 
     def patch(self, request, item_id):
-        quantity = int(request.data.get("quantity", 1))
+        quantity = parse_quantity(request.data.get("quantity", 1))
+
+        if quantity is None:
+            return Response(
+                {"error": "Quantity must be an integer"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         item = get_object_or_404(
             CartItem,

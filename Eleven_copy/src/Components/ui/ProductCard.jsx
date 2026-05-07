@@ -25,7 +25,7 @@ const ProductCard = ({ product }) => {
     product?.images?.[0] ||
     "https://via.placeholder.com/400x500?text=No+Image";
 
-  const variants = product?.variants || [];
+  const variants = useMemo(() => product?.variants || [], [product?.variants]);
 
   const availableSizes = useMemo(() => {
     const sizes = [...new Set(variants.map((v) => v.size))];

@@ -1,7 +1,7 @@
 ﻿import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import api from "../../api/apiService";
-import ProductCard from "../../components/ui/ProductCard";
+import ProductCard from "../../Components/ui/ProductCard";
 
 const NewArrivals = () => {
   const [newProducts, setNewProducts] = useState([]);
@@ -10,7 +10,7 @@ const NewArrivals = () => {
   useEffect(() => {
     const fetchNewArrivals = async () => {
       try {
-        const { data: newData } = await api.get("/products/new-arrivals/");
+        const { data: newData } = await api.get("/products/?is_new=true&page_size=50");
         const newArrivals = newData.results || newData;
         setNewProducts(newArrivals);
       } catch (error) {
@@ -22,14 +22,6 @@ const NewArrivals = () => {
 
     fetchNewArrivals();
   }, []);
-
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0
-    }).format(price);
-  };
 
   if (loading) {
     return (

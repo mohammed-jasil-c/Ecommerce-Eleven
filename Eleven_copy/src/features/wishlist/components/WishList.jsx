@@ -77,7 +77,7 @@ export const WishlistProvider = ({ children }) => {
       setWishlistItems((prev) => prev.filter((item) => item.id !== wishlistId));
       return { success: true };
     } catch (err) {
-      setError("Failed to remove item");
+      setError(err.response?.data?.error || "Failed to remove item");
       return { success: false };
     }
   };
@@ -123,7 +123,7 @@ export const WishlistProvider = ({ children }) => {
       setWishlistItems([]);
       return { success: true };
     } catch (err) {
-      setError("Failed to clear wishlist");
+      setError(err.response?.data?.error || "Failed to clear wishlist");
       return { success: false };
     }
   };

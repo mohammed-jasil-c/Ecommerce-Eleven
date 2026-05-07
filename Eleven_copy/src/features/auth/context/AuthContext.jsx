@@ -29,7 +29,7 @@ export const AuthProvider = ({ children }) => {
         // The response interceptor handles 401 → refresh automatically
         const response = await api.get("/auth/profile/");
         setUser(response.data);
-      } catch (error) {
+      } catch {
         localStorage.removeItem("access");
         localStorage.removeItem("refresh");
         setUser(null);

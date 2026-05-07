@@ -172,7 +172,7 @@ const CheckoutPage = () => {
 
       setFormData({ full_name: "", phone: "", address_line: "", city: "", state: "", pincode: "", is_default: false });
     } catch (err) {
-      toast.error("Failed to save address");
+      toast.error(err.response?.data?.error || "Failed to save address");
     }
   };
 

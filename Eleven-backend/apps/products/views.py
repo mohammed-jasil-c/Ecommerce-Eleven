@@ -1,13 +1,13 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import AllowAny
 from rest_framework.generics import ListAPIView, CreateAPIView
 from rest_framework.filters import OrderingFilter, SearchFilter
 
+from decimal import Decimal, InvalidOperation
 from django.shortcuts import get_object_or_404
-from django.utils.decorators import method_decorator
-from django.views.decorators.cache import cache_page
 
 from .models import Product, Category, ProductVariant, ProductImage
 from .serializers import (
@@ -21,6 +21,18 @@ from .serializers import (
 )
 from .pagination import ProductPagination
 from apps.accounts.permissions import IsAdminUserRole
+
+
+def parse_decimal_query(value, field_name):
+    try:
+        amount = Decimal(value)
+    except (InvalidOperation, TypeError):
+        raise ValidationError({field_name: "Enter a valid decimal value."})
+
+    if amount < 0:
+        raise ValidationError({field_name: "Value must be greater than or equal to 0."})
+
+    return amount
 
 
 class ProductListView(ListAPIView):
@@ -53,9 +65,9 @@ class ProductListView(ListAPIView):
         min_price = self.request.GET.get("min_price")
         max_price = self.request.GET.get("max_price")
         if min_price:
-            queryset = queryset.filter(price__gte=min_price)
+            queryset = queryset.filter(price__gte=parse_decimal_query(min_price, "min_price"))
         if max_price:
-            queryset = queryset.filter(price__lte=max_price)
+            queryset = queryset.filter(price__lte=parse_decimal_query(max_price, "max_price"))
         size = self.request.GET.get("size")
         color = self.request.GET.get("color")
         if size:

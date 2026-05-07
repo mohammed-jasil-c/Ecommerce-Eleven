@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import api from "../../../../api/apiService";
 import { Search, Shield, ShieldOff, Trash2 } from "lucide-react";
 
@@ -9,8 +8,6 @@ const UserManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
-  const navigate = useNavigate();
-
   useEffect(() => {
     fetchUsers();
   }, []);

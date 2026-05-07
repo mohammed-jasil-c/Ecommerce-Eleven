@@ -1,4 +1,4 @@
-import React, { useState, Suspense, lazy } from "react";
+import React, { useCallback, useState, Suspense, lazy } from "react";
 import { useLocation } from "react-router-dom";
 import { Routes, Route } from "react-router-dom";
 import { Toaster } from "sonner";
@@ -9,9 +9,8 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 gsap.registerPlugin(ScrollTrigger);
 
 // Shared Components
-import Navbar from "./components/layout/Navbar";
-import Footer from "./components/layout/Footer";
-import ProfileModal from "./components/common/ProfileModal";
+import Navbar from "./Components/layout/Navbar";
+import Footer from "./Components/layout/Footer";
 import PageTransition from "./Components/common/PageTransition";
 import Preloader from "./Components/common/Preloader";
 
@@ -22,7 +21,6 @@ import PublicRoute from "./features/auth/guards/PublicRoute";
 import Login from "./features/auth/components/Login";
 import Registration from "./features/auth/components/Registration";
 import { useBlockCheck } from "./features/auth/utils/handleLogin";
-import { useAuth } from "./features/auth/context/AuthContext";
 const ChangePasswordPage = lazy(() => import("./features/auth/components/ChangePassword.jsx"));
 
 // Pages
@@ -31,7 +29,7 @@ const NewArrivals = lazy(() => import("./pages/Home/NewArrivals"));
 const NotFound = lazy(() => import("./pages/NotFound/NotFound"));
 const AboutPage = lazy(() => import("./pages/About"));
 const Contact = lazy(() => import("./pages/Contact"));
-const ProfilePage = lazy(() => import("./pages/profilePage.jsx"));
+const ProfilePage = lazy(() => import("./pages/ProfilePage.jsx"));
 const AddressesPage = lazy(() => import("./pages/AddressesPage.jsx"));
 
 // Product Feature
@@ -54,6 +52,7 @@ const OrderDetailPage = lazy(() => import("./features/orders/components/OrderDet
 // Admin Feature
 const AdminLayout = lazy(() => import("./features/admin/layout/AdminLayout"));
 const AdminDashboard = lazy(() => import("./features/admin/pages/AdminDashboard"));
+const Unauthorized = lazy(() => import("./features/admin/pages/Unauthorized"));
 const UserManagement = lazy(() => import("./features/admin/pages/users/UserManagement"));
 const CategoryManagement = lazy(() => import("./features/admin/pages/categories/CategoryManagement"));
 const AddCategory = lazy(() => import("./features/admin/pages/categories/AddCategory"));
@@ -85,13 +84,14 @@ const AppLayout = ({ children }) => {
 
 function App() {
   const [preloaderDone, setPreloaderDone] = useState(false);
+  const handlePreloaderComplete = useCallback(() => setPreloaderDone(true), []);
 
   useBlockCheck();
   return (
     <>
       {/* Preloader on initial load */}
       {!preloaderDone && (
-        <Preloader onComplete={() => setPreloaderDone(true)} />
+        <Preloader onComplete={handlePreloaderComplete} />
       )}
 
       <AppLayout>
@@ -156,6 +156,7 @@ function App() {
           <Route path="/track-order" element={<TrackOrder />} />
           <Route path="/track-order/:orderId" element={<OrderTrackingDetail />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/unauthorized" element={<Unauthorized />} />
 
           {/* Admin Routes — nested under AdminLayout sidebar */}
           <Route

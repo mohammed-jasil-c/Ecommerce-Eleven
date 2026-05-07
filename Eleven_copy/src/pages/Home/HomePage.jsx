@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import gsap from "gsap";
 import api from "../../api/apiService";
 import QuickViewModal from "../../features/products/components/QuickViewModal";
 import { ArrowRight } from "lucide-react";

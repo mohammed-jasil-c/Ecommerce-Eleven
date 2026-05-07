@@ -83,6 +83,47 @@ const ProductDetails = () => {
     return () => tl.kill();
   }, [loading, product]);
 
+  const images = product?.images || [];
+  const variants = useMemo(() => product?.variants || [], [product?.variants]);
+
+  const uniqueSizes = useMemo(
+    () => [...new Set(variants.map((v) => v.size))].sort(),
+    [variants]
+  );
+
+  const availableColorsForSize = useMemo(() => {
+    if (selectedSize) {
+      return [
+        ...new Set(
+          variants.filter((v) => v.size === selectedSize).map((v) => v.color)
+        ),
+      ];
+    }
+    return [...new Set(variants.map((v) => v.color))];
+  }, [selectedSize, variants]);
+
+  const selectedVariant = useMemo(
+    () => variants.find((v) => v.size === selectedSize && v.color === selectedColor),
+    [selectedColor, selectedSize, variants]
+  );
+
+  useEffect(() => {
+    if (variants.length > 0 && uniqueSizes.length === 1 && !selectedSize) {
+      setSelectedSize(uniqueSizes[0]);
+    }
+  }, [selectedSize, uniqueSizes, variants.length]);
+
+  useEffect(() => {
+    if (
+      variants.length > 0 &&
+      selectedSize &&
+      availableColorsForSize.length === 1 &&
+      !selectedColor
+    ) {
+      setSelectedColor(availableColorsForSize[0]);
+    }
+  }, [availableColorsForSize, selectedColor, selectedSize, variants.length]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
@@ -110,34 +151,6 @@ const ProductDetails = () => {
       </div>
     );
   }
-
-  const images = product.images || [];
-  const variants = product.variants || [];
-
-  // Derive available combinations
-  const uniqueSizes = [...new Set(variants.map((v) => v.size))].sort();
-  // Filter colors based on selected size or show all if none selected
-  const availableColorsForSize = selectedSize
-    ? [...new Set(variants.filter(v => v.size === selectedSize).map(v => v.color))]
-    : [...new Set(variants.map((v) => v.color))];
-
-  // Resolve current active variant
-  const selectedVariant = variants.find(
-    (v) => v.size === selectedSize && v.color === selectedColor
-  );
-
-  // Auto-select size/color if only one option exists (moved to useEffect to avoid setState during render)
-  useEffect(() => {
-    if (variants.length > 0) {
-      if (uniqueSizes.length === 1 && !selectedSize) setSelectedSize(uniqueSizes[0]);
-    }
-  }, [variants, uniqueSizes, selectedSize]);
-
-  useEffect(() => {
-    if (variants.length > 0 && selectedSize) {
-      if (availableColorsForSize.length === 1 && !selectedColor) setSelectedColor(availableColorsForSize[0]);
-    }
-  }, [variants, selectedSize, availableColorsForSize, selectedColor]);
 
   const isInStock = selectedVariant ? selectedVariant.stock > 0 : false;
   const wishlisted = isInWishlist(selectedVariant?.id || product.id);

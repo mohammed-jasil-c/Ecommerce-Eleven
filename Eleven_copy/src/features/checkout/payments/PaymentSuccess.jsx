@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { createElement, useEffect, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { useCart } from "../../cart/context/CartContext";
 import api from "../../../api/apiService";
@@ -60,54 +60,56 @@ const Confetti = () => {
 /* ═══════════════════════════════
    Detail Row
    ═══════════════════════════════ */
-const DetailRow = ({ icon: Icon, label, value, highlight = false }) => (
-  <div
-    style={{
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "space-between",
-      padding: "0.85rem 0",
-      borderBottom: "1px solid var(--color-border)",
-    }}
-  >
-    <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-      <div
-        style={{
-          width: "32px",
-          height: "32px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: highlight ? "var(--color-primary)" : "var(--color-surface)",
-          color: highlight ? "var(--color-white)" : "var(--color-text-secondary)",
-        }}
-      >
-        <Icon size={14} />
+const DetailRow = ({ icon, label, value, highlight = false }) => {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: "0.85rem 0",
+        borderBottom: "1px solid var(--color-border)",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+        <div
+          style={{
+            width: "32px",
+            height: "32px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: highlight ? "var(--color-primary)" : "var(--color-surface)",
+            color: highlight ? "var(--color-white)" : "var(--color-text-secondary)",
+          }}
+        >
+          {createElement(icon, { size: 14 })}
+        </div>
+        <span
+          style={{
+            fontSize: "0.75rem",
+            fontWeight: 500,
+            letterSpacing: "0.04em",
+            color: "var(--color-text-secondary)",
+          }}
+        >
+          {label}
+        </span>
       </div>
       <span
         style={{
           fontSize: "0.75rem",
-          fontWeight: 500,
-          letterSpacing: "0.04em",
-          color: "var(--color-text-secondary)",
+          fontWeight: 600,
+          color: highlight ? "var(--color-primary)" : "var(--color-text)",
+          letterSpacing: "0.02em",
+          textTransform: highlight ? "uppercase" : "none",
         }}
       >
-        {label}
+        {value}
       </span>
     </div>
-    <span
-      style={{
-        fontSize: "0.75rem",
-        fontWeight: 600,
-        color: highlight ? "var(--color-primary)" : "var(--color-text)",
-        letterSpacing: "0.02em",
-        textTransform: highlight ? "uppercase" : "none",
-      }}
-    >
-      {value}
-    </span>
-  </div>
-);
+  );
+};
 
 /* ═══════════════════════════════
    Payment Success

@@ -2,7 +2,6 @@
 import React from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import AdminLayout from "../../admin/layout/AdminLayout";
 
 const AdminRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -28,8 +27,7 @@ const AdminRoute = ({ children }) => {
     return <Navigate to="/unauthorized" replace />;
   }
 
-  // Return with AdminLayout wrapper
-  return <AdminLayout>{children}</AdminLayout>;
+  return children;
 };
 
 

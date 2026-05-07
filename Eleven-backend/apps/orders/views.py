@@ -22,6 +22,14 @@ from .email_service import send_order_confirmation_email
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
 
+def parse_positive_quantity(value):
+    try:
+        quantity = int(value)
+    except (TypeError, ValueError):
+        return None
+    return quantity if quantity > 0 else None
+
+
 class BuyNowView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -29,10 +37,13 @@ class BuyNowView(APIView):
     def post(self, request):
 
         variant_id = request.data.get("variant_id")
-        quantity = int(request.data.get("quantity", 1))
+        quantity = parse_positive_quantity(request.data.get("quantity", 1))
 
         if not variant_id:
             return Response({"error": "variant_id required"}, status=400)
+
+        if quantity is None:
+            return Response({"error": "Quantity must be a positive integer"}, status=400)
 
         variant = get_object_or_404(ProductVariant, id=variant_id)
 

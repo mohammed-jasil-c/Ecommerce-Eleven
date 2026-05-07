@@ -1,3 +1,5 @@
+import os
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -33,6 +35,16 @@ from .email_service import send_welcome_email
 User = get_user_model()
 
 
+def set_refresh_cookie(response, refresh_token):
+    response.set_cookie(
+        key="refresh_token",
+        value=str(refresh_token),
+        httponly=True,
+        secure=settings.SESSION_COOKIE_SECURE,
+        samesite=os.getenv("REFRESH_COOKIE_SAMESITE", "None" if not settings.DEBUG else "Lax"),
+    )
+
+
 class LoginView(APIView):
 
     def post(self, request):
@@ -59,13 +71,7 @@ class LoginView(APIView):
             "refresh": str(refresh),
         })
 
-        response.set_cookie(
-            key="refresh_token",
-            value=str(refresh),
-            httponly=True,
-            secure=False,
-            samesite="Lax"
-        )
+        set_refresh_cookie(response, refresh)
 
         return response
 
@@ -92,7 +98,7 @@ class RefreshView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        refresh_token = request.COOKIES.get("refresh_token")
+        refresh_token = request.COOKIES.get("refresh_token") or request.data.get("refresh")
 
         if not refresh_token:
             return Response({"error": "No refresh token"}, status=400)
@@ -114,13 +120,7 @@ class RefreshView(APIView):
                 "refresh": str(new_refresh),
             })
 
-            response.set_cookie(
-                key="refresh_token",
-                value=str(new_refresh),
-                httponly=True,
-                secure=False,
-                samesite="Lax"
-            )
+            set_refresh_cookie(response, new_refresh)
 
             return response
 
@@ -313,13 +313,7 @@ class GoogleLoginView(APIView):
                 "refresh": str(refresh),
             })
 
-            response.set_cookie(
-                key="refresh_token",
-                value=str(refresh),
-                httponly=True,
-                secure=False,
-                samesite="Lax",
-            )
+            set_refresh_cookie(response, refresh)
 
             return response
 

@@ -33,7 +33,7 @@ const EditProduct = () => {
       const res = await api.get("/products/categories/");
       setCategories(res.data.results || res.data);
     } catch (error) {
-      console.error("Failed to load categories");
+      console.error("Failed to load categories", error);
     }
   };
 
