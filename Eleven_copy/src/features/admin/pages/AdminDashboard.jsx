@@ -47,7 +47,7 @@ const AdminDashboard = () => {
       setError(null);
 
       const [usersResponse, productsResponse, ordersResponse] = await Promise.all([
-        api.get("auth/users/"),
+        api.get("/auth/users/"),
         api.get("/products/"),
         api.get("/orders/admin/all/"),
       ]);

@@ -16,9 +16,9 @@ const HomePage = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const { data: featuredData } = await api.get("products/?is_featured=true&page_size=4");
-        const { data: newData } = await api.get("products/?is_new=true&page_size=8");
-        const { data: categoriesData } = await api.get("products/categories/");
+        const { data: featuredData } = await api.get("/products/?is_featured=true&page_size=4");
+        const { data: newData } = await api.get("/products/?is_new=true&page_size=8");
+        const { data: categoriesData } = await api.get("/products/categories/");
         setFeaturedProducts(featuredData.results || []);
         setNewProducts(newData.results || []);
         setCategories(categoriesData || []);

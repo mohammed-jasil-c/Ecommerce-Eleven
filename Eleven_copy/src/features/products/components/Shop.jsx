@@ -96,7 +96,7 @@ const ShopPage = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res = await api.get("products/categories/");
+        const res = await api.get("/products/categories/");
         setCategories(res.data || []);
       } catch (error) {
         console.error("Category fetch error:", error);
@@ -128,7 +128,7 @@ const ShopPage = () => {
           params.set("search", debouncedSearch);
         }
 
-        const response = await api.get(`products/?${params.toString()}`);
+        const response = await api.get(`/products/?${params.toString()}`);
         
         if (!ignore) {
           const data = response.data;

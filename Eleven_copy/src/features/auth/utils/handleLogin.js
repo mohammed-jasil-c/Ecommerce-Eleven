@@ -14,7 +14,7 @@ export const useBlockCheck = () => {
       if (!token) return;
 
       try {
-        const { data } = await api.get("auth/profile/");
+        const { data } = await api.get("/auth/profile/");
 
         if (data.is_blocked) {
           // Clear storage
