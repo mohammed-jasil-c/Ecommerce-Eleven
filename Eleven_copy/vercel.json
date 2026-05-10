@@ -1,18 +1,6 @@
 {
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "env": {
-    "VITE_API_URL": "@vite_api_url",
-    "VITE_API_TIMEOUT": "@vite_api_timeout",
-    "VITE_AUTH_TOKEN_KEY": "@vite_auth_token_key",
-    "VITE_REFRESH_TOKEN_KEY": "@vite_refresh_token_key",
-    "VITE_APP_NAME": "@vite_app_name",
-    "VITE_APP_VERSION": "@vite_app_version",
-    "VITE_STRIPE_PUBLIC_KEY": "@vite_stripe_public_key",
-    "VITE_MEDIA_URL": "@vite_media_url",
-    "VITE_FRONTEND_URL": "@vite_frontend_url",
-    "VITE_GOOGLE_CLIENT_ID": "@vite_google_client_id"
-  },
   "rewrites": [
     {
       "source": "/(.*)",
