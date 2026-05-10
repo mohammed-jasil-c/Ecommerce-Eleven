@@ -1,7 +1,10 @@
 import axios from "axios";
 
+const API_URL = import.meta.env.VITE_API_URL || "https://11eleven.duckdns.org/api";
+console.log("API URL:", import.meta.env.VITE_API_URL, "Resolved to:", API_URL);
+
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL,
+    baseURL: API_URL,
     timeout: parseInt(import.meta.env.VITE_API_TIMEOUT) || 10000,
     withCredentials: true,
     headers: {
@@ -72,7 +75,7 @@ api.interceptors.response.use(
 
             try {
                 const { data } = await axios.post(
-                    `${import.meta.env.VITE_API_URL}/auth/refresh/`,
+                    `${API_URL}/auth/refresh/`,
                     { refresh: refreshToken },
                     { withCredentials: true }
                 );
