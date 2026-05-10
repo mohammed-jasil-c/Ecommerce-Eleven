@@ -50,7 +50,7 @@ const Registration = () => {
 
     try {
       await api.post("/auth/register/", {
-        name: formData.fullName,
+        full_name: formData.fullName,
         email: formData.email,
         password: formData.password,
       });
@@ -58,11 +58,13 @@ const Registration = () => {
       toast.success("Registration successful! Please login.");
       navigate("/login");
     } catch (error) {
-      console.error(error);
+      console.error("Registration error:", error.response?.data || error);
       if (error.response?.data) {
         const errors = error.response.data;
-        const firstError =
-          Object.values(errors)[0]?.[0] || "Registration failed";
+        // Handle both array and string error formats
+        const firstError = typeof Object.values(errors)[0] === "string"
+          ? Object.values(errors)[0]
+          : Object.values(errors)[0]?.[0] || "Registration failed";
         toast.error(firstError);
       } else {
         toast.error("Something went wrong.");
