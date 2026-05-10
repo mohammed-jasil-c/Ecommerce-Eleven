@@ -13,8 +13,8 @@ const heroSets = [
       "https://images.unsplash.com/photo-1608231387042-66d1773070a5?q=80&w=1200&auto=format&fit=crop",
     ],
     ctas: [
-      { label: "Shop Men", link: "/shop?category=men" },
-      { label: "Shop Women", link: "/shop?category=women" },
+      { label: "Shop Men", link: "/shop?gender=men" },
+      { label: "Shop Women", link: "/shop?gender=women" },
     ],
   },
   {

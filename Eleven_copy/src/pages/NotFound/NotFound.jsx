@@ -1,4 +1,4 @@
-﻿import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import gsap from "gsap";
 
@@ -153,9 +153,9 @@ function NotFound() {
           </p>
           <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "1.5rem" }}>
             {[
-              { to: "/shop?category=women", label: "Women's Collection" },
-              { to: "/shop?category=men", label: "Men's Collection" },
-              { to: "/shop?category=new", label: "New Arrivals" },
+              { to: "/shop?gender=women", label: "Women's Collection" },
+              { to: "/shop?gender=men", label: "Men's Collection" },
+              { to: "/new-arrivals", label: "New Arrivals" },
               { to: "/contact", label: "Contact Support" },
             ].map((link) => (
               <Link
