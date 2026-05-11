@@ -1,0 +1,55 @@
+name: Deploy Backend to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -e
+
+            echo "========================================="
+            echo "🚀 Starting deployment — $(date)"
+            echo "========================================="
+
+            PROJECT_DIR=~/Ecommerce-Eleven/Eleven-backend
+            cd "$PROJECT_DIR"
+
+            echo "📦 Discarding local changes and pulling latest..."
+            git fetch origin main
+            git reset --hard origin/main
+
+            echo "🐍 Activating virtual environment..."
+            source env/bin/activate
+
+            echo "📥 Installing dependencies..."
+            pip install -r requirements.txt --quiet
+
+            echo "📂 Collecting static files..."
+            python manage.py collectstatic --noinput
+
+            echo "🔄 Running migrations..."
+            python manage.py migrate --noinput
+
+            echo "♻️  Restarting Gunicorn..."
+            sudo systemctl restart gunicorn
+
+            echo "✅ Verifying Gunicorn status..."
+            sudo systemctl is-active --quiet gunicorn && echo "Gunicorn is running" || echo "⚠️ Gunicorn failed to start"
+
+            echo "========================================="
+            echo "✅ Deployment complete — $(date)"
+            echo "========================================="
