@@ -259,24 +259,42 @@ def stripe_webhook(request):
     # --- payment_intent.succeeded ---
     if event_type == "payment_intent.succeeded":
         intent = event["data"]["object"]
+        payment_intent_id = intent.get("id", "")
         order_id = intent.get("metadata", {}).get("order_id")
 
-        if not order_id:
-            logger.error("No order_id in payment intent metadata: %s", intent.get("id"))
-            return HttpResponse(status=200)  # ACK so Stripe stops retrying
+        # --- Resolve order: by metadata first, fallback to transaction_id ---
+        order = None
+        if order_id:
+            try:
+                order = Order.objects.get(id=order_id)
+            except Order.DoesNotExist:
+                logger.error("Order not found by metadata order_id: %s", order_id)
+        
+        if order is None and payment_intent_id:
+            # Fallback: find order via Payment.transaction_id (for legacy intents without metadata)
+            try:
+                payment_obj = Payment.objects.select_related("order").get(
+                    transaction_id=payment_intent_id
+                )
+                order = payment_obj.order
+                logger.info("Found order %s via transaction_id fallback (pi: %s)",
+                            order.id, payment_intent_id)
+            except Payment.DoesNotExist:
+                logger.error("No order found for payment_intent %s (no metadata, no transaction_id match)",
+                             payment_intent_id)
 
-        try:
-            order = Order.objects.get(id=order_id)
-        except Order.DoesNotExist:
-            logger.error("Order not found: %s", order_id)
-            return HttpResponse(status=200)  # ACK — order may have been deleted
+        if order is None:
+            logger.error("Could not resolve order for payment_intent %s — acknowledging to stop retries",
+                         payment_intent_id)
+            return HttpResponse(status=200)
 
         if order.payment_status == "paid":
-            logger.info("Order %s already paid — skipping (idempotent)", order_id)
+            logger.info("Order %s already paid — skipping (idempotent)", order.id)
             return HttpResponse(status=200)
 
         try:
             order.payment.status = "succeeded"
+            order.payment.transaction_id = payment_intent_id  # ensure it's saved
             order.payment.save()
 
             order.status = "confirmed"
@@ -295,11 +313,11 @@ def stripe_webhook(request):
             try:
                 send_order_confirmation_email(order)
             except Exception as email_err:
-                logger.warning("Email send failed for order %s: %s", order_id, email_err)
+                logger.warning("Email send failed for order %s: %s", order.id, email_err)
 
-            logger.info("✅ Order %s confirmed and stock updated", order_id)
+            logger.info("✅ Order %s confirmed and stock updated", order.id)
         except Exception as process_err:
-            logger.error("Failed to process order %s: %s", order_id, process_err)
+            logger.error("Failed to process order %s: %s", order.id, process_err)
             return HttpResponse("Processing error", status=500)
 
         return HttpResponse(status=200)
