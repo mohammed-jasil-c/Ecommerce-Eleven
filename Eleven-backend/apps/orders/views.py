@@ -210,60 +210,114 @@ class CreateStripePaymentIntentView(APIView):
 
 @csrf_exempt
 def stripe_webhook(request):
+    """
+    Stripe webhook endpoint.
+    Receives raw POST body, verifies signature, processes payment events.
+    """
+    import logging
+    logger = logging.getLogger("stripe.webhook")
 
-    payload = request.body
+    # --- Guard: only POST allowed ---
+    if request.method != "POST":
+        logger.warning("Webhook received non-POST method: %s", request.method)
+        return HttpResponse("Method not allowed", status=405)
+
+    payload = request.body  # raw bytes — do NOT decode/parse before verification
     sig_header = request.META.get("HTTP_STRIPE_SIGNATURE")
 
+    logger.info("Webhook hit — Content-Length: %s, Sig present: %s",
+                request.META.get("CONTENT_LENGTH", "?"), bool(sig_header))
+
+    if not sig_header:
+        logger.error("Missing Stripe-Signature header")
+        return HttpResponse("Missing signature", status=400)
+
+    # --- Signature verification ---
     try:
         event = stripe.Webhook.construct_event(
             payload,
             sig_header,
             settings.STRIPE_WEBHOOK_SECRET
         )
-    except Exception:
-        return HttpResponse(status=400)
+    except ValueError as e:
+        # Invalid payload (not valid JSON, etc.)
+        logger.error("Invalid payload: %s", e)
+        return HttpResponse("Invalid payload", status=400)
+    except stripe.error.SignatureVerificationError as e:
+        # Wrong webhook secret or body was tampered/re-encoded
+        logger.error("Signature verification failed: %s", e)
+        logger.error("Webhook secret starts with: %s...",
+                      settings.STRIPE_WEBHOOK_SECRET[:12] if settings.STRIPE_WEBHOOK_SECRET else "NONE")
+        return HttpResponse("Invalid signature", status=400)
+    except Exception as e:
+        logger.error("Unexpected webhook error: %s — %s", type(e).__name__, e)
+        return HttpResponse("Webhook error", status=400)
 
-    if event["type"] == "payment_intent.succeeded":
+    event_type = event["type"]
+    logger.info("✅ Verified event: %s (id: %s)", event_type, event.get("id", "?"))
+
+    # --- payment_intent.succeeded ---
+    if event_type == "payment_intent.succeeded":
         intent = event["data"]["object"]
-        order_id = intent["metadata"]["order_id"]
+        order_id = intent.get("metadata", {}).get("order_id")
+
+        if not order_id:
+            logger.error("No order_id in payment intent metadata: %s", intent.get("id"))
+            return HttpResponse(status=200)  # ACK so Stripe stops retrying
 
         try:
             order = Order.objects.get(id=order_id)
         except Order.DoesNotExist:
-            return HttpResponse(status=400)
+            logger.error("Order not found: %s", order_id)
+            return HttpResponse(status=200)  # ACK — order may have been deleted
 
         if order.payment_status == "paid":
+            logger.info("Order %s already paid — skipping (idempotent)", order_id)
             return HttpResponse(status=200)
 
-        order.payment.status = "succeeded"
-        order.payment.save()
+        try:
+            order.payment.status = "succeeded"
+            order.payment.save()
 
-        order.status = "confirmed"
-        order.payment_status = "paid"
-        order.save()
+            order.status = "confirmed"
+            order.payment_status = "paid"
+            order.save()
 
-        for item in order.items.select_related("variant").all():
-            variant = item.variant
-            variant.stock -= item.quantity
-            variant.save()
+            for item in order.items.select_related("variant").all():
+                variant = item.variant
+                variant.stock -= item.quantity
+                variant.save()
 
-        cart = Cart.objects.filter(user=order.user).first()
-        if cart:
-            cart.items.all().delete()
+            cart = Cart.objects.filter(user=order.user).first()
+            if cart:
+                cart.items.all().delete()
 
-        send_order_confirmation_email(order)
+            try:
+                send_order_confirmation_email(order)
+            except Exception as email_err:
+                logger.warning("Email send failed for order %s: %s", order_id, email_err)
+
+            logger.info("✅ Order %s confirmed and stock updated", order_id)
+        except Exception as process_err:
+            logger.error("Failed to process order %s: %s", order_id, process_err)
+            return HttpResponse("Processing error", status=500)
 
         return HttpResponse(status=200)
 
-    if event["type"] == "payment_intent.payment_failed":
-
+    # --- payment_intent.payment_failed ---
+    if event_type == "payment_intent.payment_failed":
         intent = event["data"]["object"]
-        order_id = intent["metadata"]["order_id"]
+        order_id = intent.get("metadata", {}).get("order_id")
+
+        if not order_id:
+            logger.warning("No order_id in failed payment metadata")
+            return HttpResponse(status=200)
 
         try:
             order = Order.objects.get(id=order_id)
         except Order.DoesNotExist:
-            return HttpResponse(status=400)
+            logger.error("Order not found for failed payment: %s", order_id)
+            return HttpResponse(status=200)
 
         order.payment.status = "failed"
         order.payment.save()
@@ -271,6 +325,10 @@ def stripe_webhook(request):
         order.status = "cancelled"
         order.payment_status = "failed"
         order.save()
+        logger.info("Order %s marked as failed/cancelled", order_id)
+
+    else:
+        logger.info("Unhandled event type: %s — acknowledging", event_type)
 
     return HttpResponse(status=200)
 
